@@ -37,12 +37,26 @@ abstract class _AnimalControllerBase with Store {
     }
   }
 
-  // Salvar animal
+  // Salvar animal (usado no formulário de cadastro)
   @action
   Future<void> salvarAnimal() async {
     await _service.saveOrUpdate(animal.toModel());
     await loadAnimais();
     resetForm();
+  }
+
+  // Atualizar animal específico (usado no bottom sheet de edição)
+  @action
+  Future<void> atualizarAnimal(AnimalStore animalParaAtualizar) async {
+    await _service.saveOrUpdate(animalParaAtualizar.toModel());
+    await loadAnimais();
+  }
+
+  // Excluir animal específico
+  @action
+  Future<void> excluirAnimal(AnimalStore animalParaExcluir) async {
+    await _service.delete(animalParaExcluir.toModel());
+    await loadAnimais();
   }
 
   // Resetar formulário

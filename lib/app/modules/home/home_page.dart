@@ -1,6 +1,7 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cuidar_pet_app/app/modules/animal/animal_controller.dart';
 import 'package:cuidar_pet_app/app/shared/route/route.dart';
+import 'package:cuidar_pet_app/app/shared/widget/bottom_sheet_editar_pet/bottom_sheet_editar_pet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:flutter_modular/flutter_modular.dart';
@@ -39,7 +40,7 @@ class _HomePageState extends State<HomePage> {
         child: const Icon(
           Icons.pets,
           color: Color(0xFF00845A),
-          size: 40,
+          size: 60,
         ),
       );
     }
@@ -56,7 +57,7 @@ class _HomePageState extends State<HomePage> {
             child: const Icon(
               Icons.pets,
               color: Color(0xFF00845A),
-              size: 40,
+              size: 60,
             ),
           );
         },
@@ -86,7 +87,7 @@ class _HomePageState extends State<HomePage> {
               child: const Icon(
                 Icons.pets,
                 color: Color(0xFF00845A),
-                size: 40,
+                size: 60,
               ),
             );
           },
@@ -98,11 +99,27 @@ class _HomePageState extends State<HomePage> {
           child: const Icon(
             Icons.pets,
             color: Color(0xFF00845A),
-            size: 40,
+            size: 60,
           ),
         );
       }
     }
+  }
+
+  void _mostrarEditarPetBottomSheet(dynamic animal) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      useSafeArea: true,
+      builder: (context) => EditarPetBottomSheet(
+        animal: animal,
+        controller: controller,
+      ),
+    ).then((_) {
+      // Recarregar a lista após fechar o bottom sheet
+      controller.loadAnimais();
+    });
   }
 
   @override
@@ -173,7 +190,7 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     CarouselSlider(
                       options: CarouselOptions(
-                        height: 200,
+                        height: 220, // Altura ajustada para o layout horizontal
                         enlargeCenterPage: true,
                         onPageChanged: (index, reason) {
                           setState(() {
@@ -224,68 +241,97 @@ class _HomePageState extends State<HomePage> {
                               );
                             }
 
-                            // Item de pet
+                            // Item de pet - LAYOUT HORIZONTAL (imagem ao lado das informações)
                             return Container(
                               width: MediaQuery.of(context).size.width,
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(20),
                               ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Row(
-                                  children: [
-                                    // Foto do pet - MODIFICADO AQUI
-                                    Container(
-                                      width: 80,
-                                      height: 80,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: const Color(0xFF00845A),
-                                          width: 2,
+                              child: Stack(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.all(20.0),
+                                    child: Row(
+                                      children: [
+                                        // Foto do pet - MAIOR
+                                        Container(
+                                          width: 120,
+                                          height: 120,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: const Color(0xFF00845A),
+                                              width: 3,
+                                            ),
+                                          ),
+                                          child: ClipOval(
+                                            child: _buildPetImage(item.imagem),
+                                          ),
+                                        ),
+
+                                        const SizedBox(width: 20),
+
+                                        // Informações do pet - AO LADO DA IMAGEM
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                item.nome,
+                                                style: const TextStyle(
+                                                  fontSize: 28,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Color(0xFF00845A),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                item.tipoAnimal,
+                                                style: const TextStyle(
+                                                  fontSize: 18,
+                                                  color: Color(0xFF00845A),
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                '${item.idade} ${item.idade == 1 ? 'ano' : 'anos'}',
+                                                style: const TextStyle(
+                                                  fontSize: 16,
+                                                  color: Colors.black87,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+
+                                  // Ícone de editar no canto superior direito
+                                  Positioned(
+                                    top: 12,
+                                    right: 12,
+                                    child: GestureDetector(
+                                      onTap: () => _mostrarEditarPetBottomSheet(item),
+                                      child: Container(
+                                        width: 36,
+                                        height: 36,
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFF00845A),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.edit,
+                                          color: Colors.white,
+                                          size: 20,
                                         ),
                                       ),
-                                      child: ClipOval(
-                                        child: _buildPetImage(item.imagem),
-                                      ),
                                     ),
-                                    const SizedBox(width: 16),
-                                    // Informações do pet
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                        mainAxisAlignment:
-                                        MainAxisAlignment.center,
-                                        children: [
-                                          Text(
-                                            item.nome,
-                                            style: const TextStyle(
-                                              fontSize: 24,
-                                              fontWeight: FontWeight.bold,
-                                              color: Color(0xFF00845A),
-                                            ),
-                                          ),
-                                          Text(
-                                            item.tipoAnimal,
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.black87,
-                                            ),
-                                          ),
-                                          Text(
-                                            '${item.idade} ${item.idade == 1 ? 'ano' : 'anos'}',
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.black87,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             );
                           },

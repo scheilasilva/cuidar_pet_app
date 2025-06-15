@@ -21,7 +21,6 @@ class AnimalModule extends Module {
 
   @override
   void routes(RouteManager r) {
-    // Mudança aqui: usar Modular.initialRoute em vez de '/cadastro'
     r.child(
       Modular.initialRoute,
       child: (context) => const CadastroAnimalPage(),
