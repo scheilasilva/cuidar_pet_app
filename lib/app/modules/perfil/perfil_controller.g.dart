@@ -91,6 +91,15 @@ mixin _$PerfilController on _PerfilControllerBase, Store {
         .run(() => super.atualizarPerfilComImagem(imagePath));
   }
 
+  late final _$alterarSenhaAsyncAction =
+      AsyncAction('_PerfilControllerBase.alterarSenha', context: context);
+
+  @override
+  Future<void> alterarSenha(String senhaAtual, String novaSenha) {
+    return _$alterarSenhaAsyncAction
+        .run(() => super.alterarSenha(senhaAtual, novaSenha));
+  }
+
   late final _$excluirContaAsyncAction =
       AsyncAction('_PerfilControllerBase.excluirConta', context: context);
 

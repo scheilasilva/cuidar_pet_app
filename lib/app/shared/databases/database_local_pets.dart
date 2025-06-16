@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:cuidar_pet_app/app/modules/animal/repositories/animal_repository.dart';
+import 'package:cuidar_pet_app/app/modules/exame/repositories/exame_repository.dart';
 import 'package:cuidar_pet_app/app/modules/user/repositories/user_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:path/path.dart';
@@ -27,6 +28,7 @@ class DatabaseLocalPets {
     
     AnimalRepository().create(batch);
     UserRepository().create(batch);
+    ExameRepository().create(batch);
 
     await batch.commit();
   }

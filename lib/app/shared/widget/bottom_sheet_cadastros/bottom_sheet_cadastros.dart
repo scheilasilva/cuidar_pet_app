@@ -32,7 +32,7 @@ class _BottomSheetCadastroState extends State<BottomSheetCadastro> {
     'Raio-X',
     'Ultrassonografia',
     'Endoscopia',
-    'Exame de fezes'
+    'Exame de fezes',
     'Outro'
   ];
 
@@ -114,6 +114,7 @@ class _BottomSheetCadastroState extends State<BottomSheetCadastro> {
           ),
           TextField(
             controller: _campo2Controller,
+            maxLines: 3,
             decoration: InputDecoration(
               hintStyle: TextStyle(color: Colors.grey[400]),
               filled: true,
@@ -142,10 +143,10 @@ class _BottomSheetCadastroState extends State<BottomSheetCadastro> {
                 borderSide: BorderSide.none,
               ),
               contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
 
           // Dropdown
           Container(
@@ -191,12 +192,12 @@ class _BottomSheetCadastroState extends State<BottomSheetCadastro> {
                 style: TextStyle(color: Color(0xFF007A63)),
               ),
               style: OutlinedButton.styleFrom(
-                side: BorderSide(color: const Color(0xFF007A63)),
+                side: const BorderSide(color: Color(0xFF007A63)),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
                 padding:
-                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               ),
             ),
           ),
@@ -207,11 +208,24 @@ class _BottomSheetCadastroState extends State<BottomSheetCadastro> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
+                if (_campo1Controller.text.isEmpty ||
+                    _campo2Controller.text.isEmpty ||
+                    _campo3Controller.text.isEmpty ||
+                    _tipoSelecionado == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Preencha todos os campos'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
                 widget.onSalvar(
                   _campo1Controller.text,
                   _campo2Controller.text,
                   _campo3Controller.text,
-                  _tipoSelecionado ?? '',
+                  _tipoSelecionado!,
                   _imagemPath,
                 );
                 Navigator.pop(context);
