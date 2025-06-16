@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class BottomSheetCadastro extends StatefulWidget {
   final String titulo;
@@ -26,6 +28,7 @@ class _BottomSheetCadastroState extends State<BottomSheetCadastro> {
   final TextEditingController _campo3Controller = TextEditingController();
   String? _tipoSelecionado;
   String? _imagemPath;
+  bool _isLoadingImage = false;
 
   final List<String> _tiposExame = [
     'Hemograma',
@@ -44,12 +47,125 @@ class _BottomSheetCadastroState extends State<BottomSheetCadastro> {
     super.dispose();
   }
 
-  void _adicionarImagem() {
-    // Aqui você implementaria a lógica para selecionar uma imagem
-    // Por exemplo, usando image_picker
+  void _mostrarOpcoesImagem() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Galeria'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _selecionarImagem(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera),
+                title: const Text('Câmera'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _selecionarImagem(ImageSource.camera);
+                },
+              ),
+              if (_imagemPath != null)
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Colors.red),
+                  title: const Text('Remover imagem', style: TextStyle(color: Colors.red)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _removerImagem();
+                  },
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _selecionarImagem(ImageSource source) async {
     setState(() {
-      _imagemPath = 'caminho_da_imagem_selecionada';
+      _isLoadingImage = true;
     });
+
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: source,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        setState(() {
+          _imagemPath = image.path;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao selecionar imagem: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _isLoadingImage = false;
+      });
+    }
+  }
+
+  void _removerImagem() {
+    setState(() {
+      _imagemPath = null;
+    });
+  }
+
+  Widget _buildImagePreview() {
+    if (_imagemPath == null) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Imagem selecionada:',
+            style: TextStyle(fontSize: 16, color: Colors.black87),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            height: 150,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey[300]!),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.file(
+                File(_imagemPath!),
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: Colors.grey[200],
+                    child: const Center(
+                      child: Icon(Icons.error, color: Colors.red),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -181,15 +297,26 @@ class _BottomSheetCadastroState extends State<BottomSheetCadastro> {
           ),
           const SizedBox(height: 24),
 
+          // Preview da imagem selecionada
+          _buildImagePreview(),
+
           // Botão adicionar imagem
           Center(
             child: OutlinedButton.icon(
-              onPressed: _adicionarImagem,
-              icon: const Icon(Icons.add_photo_alternate_outlined,
-                  color: Color(0xFF007A63)),
-              label: const Text(
-                'Adicionar imagem',
-                style: TextStyle(color: Color(0xFF007A63)),
+              onPressed: _isLoadingImage ? null : _mostrarOpcoesImagem,
+              icon: _isLoadingImage
+                  ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+                  : Icon(
+                _imagemPath != null ? Icons.edit : Icons.add_photo_alternate_outlined,
+                color: const Color(0xFF007A63),
+              ),
+              label: Text(
+                _imagemPath != null ? 'Alterar imagem' : 'Adicionar imagem',
+                style: const TextStyle(color: Color(0xFF007A63)),
               ),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Color(0xFF007A63)),
@@ -226,7 +353,7 @@ class _BottomSheetCadastroState extends State<BottomSheetCadastro> {
                   _campo2Controller.text,
                   _campo3Controller.text,
                   _tipoSelecionado!,
-                  _imagemPath,
+                  _imagemPath, // Passa o caminho da imagem temporária
                 );
                 Navigator.pop(context);
               },

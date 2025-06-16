@@ -26,13 +26,15 @@ class _ExamePageState extends State<ExamePage> {
   }
 
   void _initializeWithSelectedAnimal() {
-    // Pegar o animal selecionado do carrossel (primeiro animal por padrão)
-    if (animalController.animais.isNotEmpty) {
-      final animalSelecionado = animalController.animais.first;
-      controller.setAnimalSelecionado(animalSelecionado.id);
+    // Usar o animal selecionado do carrossel
+    if (animalController.animalSelecionadoCarrossel != null) {
+      controller.setAnimalSelecionado(animalController.animalSelecionadoCarrossel!.id);
+    } else if (animalController.animais.isNotEmpty) {
+      // Fallback: definir o primeiro animal como selecionado
+      animalController.setAnimalSelecionadoCarrossel(0);
+      controller.setAnimalSelecionado(animalController.animais.first.id);
     }
   }
-
   void _showExameDetalhes(dynamic exame) {
     showModalBottomSheet(
       context: context,

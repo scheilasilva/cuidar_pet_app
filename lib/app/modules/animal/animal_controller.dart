@@ -15,6 +15,14 @@ abstract class _AnimalControllerBase with Store {
   @observable
   ObservableList<AnimalStore> animais = ObservableList<AnimalStore>();
 
+  // NOVO: Animal selecionado no carrossel
+  @observable
+  AnimalStore? animalSelecionadoCarrossel;
+
+  // NOVO: Índice do carrossel selecionado
+  @observable
+  int carrosselIndex = 0;
+
   _AnimalControllerBase(this._service);
 
   @computed
@@ -27,13 +35,38 @@ abstract class _AnimalControllerBase with Store {
         a.genero.isNotEmpty;
   }
 
+  // NOVO: Método para definir animal selecionado no carrossel
+  @action
+  void setAnimalSelecionadoCarrossel(int index) {
+    if (index >= 0 && index < animais.length) {
+      carrosselIndex = index;
+      animalSelecionadoCarrossel = animais[index];
+    }
+  }
+
   // Carregar todos os animais
+  @action
   Future<void> loadAnimais() async {
     final list = await _service.getAll();
     animais.clear();
 
     for (var animal in list) {
       animais.add(AnimalStoreFactory.fromModel(animal));
+    }
+
+    // Ajustar seleção após carregar
+    if (animais.isNotEmpty) {
+      // Se o índice atual é válido, manter
+      if (carrosselIndex < animais.length) {
+        animalSelecionadoCarrossel = animais[carrosselIndex];
+      } else {
+        // Senão, selecionar o primeiro
+        carrosselIndex = 0;
+        animalSelecionadoCarrossel = animais.first;
+      }
+    } else {
+      animalSelecionadoCarrossel = null;
+      carrosselIndex = 0;
     }
   }
 
@@ -56,6 +89,12 @@ abstract class _AnimalControllerBase with Store {
   @action
   Future<void> excluirAnimal(AnimalStore animalParaExcluir) async {
     await _service.delete(animalParaExcluir.toModel());
+
+    // Se o animal excluído era o selecionado, ajustar seleção
+    if (animalSelecionadoCarrossel?.id == animalParaExcluir.id) {
+      carrosselIndex = 0;
+    }
+
     await loadAnimais();
   }
 

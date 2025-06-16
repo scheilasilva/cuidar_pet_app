@@ -98,6 +98,16 @@ mixin _$ExameController on _ExameControllerBase, Store {
     return _$salvarExameAsyncAction.run(() => super.salvarExame());
   }
 
+  late final _$criarExameComImagemAsyncAction =
+      AsyncAction('_ExameControllerBase.criarExameComImagem', context: context);
+
+  @override
+  Future<void> criarExameComImagem(String titulo, String descricao, String data,
+      String tipo, String imagePath) {
+    return _$criarExameComImagemAsyncAction.run(() =>
+        super.criarExameComImagem(titulo, descricao, data, tipo, imagePath));
+  }
+
   late final _$criarExameAsyncAction =
       AsyncAction('_ExameControllerBase.criarExame', context: context);
 

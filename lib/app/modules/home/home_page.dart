@@ -15,26 +15,47 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _currentCarouselIndex = 0;
   final controller = Modular.get<AnimalController>();
+  final CarouselSliderController _carouselController = CarouselSliderController();
 
   @override
   void initState() {
     super.initState();
-    controller.loadAnimais();
+    _initializePage();
+  }
+
+  Future<void> _initializePage() async {
+    await controller.loadAnimais();
+
+    // Restaurar posição do carrossel após carregar os animais
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (controller.animais.isNotEmpty && controller.carrosselIndex > 0) {
+        _carouselController.animateToPage(
+          controller.carrosselIndex,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   void _navigateToScreen(String screenName) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Navegando para: $screenName')),
     );
-    // Implement actual navigation here
+  }
+
+  // Método para lidar com mudanças no carrossel
+  void _onCarouselPageChanged(int index) {
+    // Só atualizar se não for o botão "Adicionar Pet"
+    if (index < controller.animais.length) {
+      controller.setAnimalSelecionadoCarrossel(index);
+    }
   }
 
   // Método para construir a imagem do pet corretamente
   Widget _buildPetImage(String? imagePath) {
     if (imagePath == null || imagePath.isEmpty) {
-      // Se não há imagem, mostra o ícone padrão
       return Container(
         color: Colors.grey[200],
         child: const Icon(
@@ -45,9 +66,7 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    // Verifica se é um arquivo local ou URL
     if (imagePath.startsWith('http')) {
-      // É uma URL - usa Image.network
       return Image.network(
         imagePath,
         fit: BoxFit.cover,
@@ -75,7 +94,6 @@ class _HomePageState extends State<HomePage> {
         },
       );
     } else {
-      // É um arquivo local - usa Image.file
       final file = File(imagePath);
       if (file.existsSync()) {
         return Image.file(
@@ -93,7 +111,6 @@ class _HomePageState extends State<HomePage> {
           },
         );
       } else {
-        // Arquivo não existe
         return Container(
           color: Colors.grey[200],
           child: const Icon(
@@ -117,7 +134,6 @@ class _HomePageState extends State<HomePage> {
         controller: controller,
       ),
     ).then((_) {
-      // Recarregar a lista após fechar o bottom sheet
       controller.loadAnimais();
     });
   }
@@ -180,7 +196,6 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 40),
             Observer(
               builder: (_) {
-                // Lista de itens para o carousel: pets + botão adicionar
                 final carouselItems = [
                   ...controller.animais,
                   null, // Representa o botão "Adicionar Pet"
@@ -189,19 +204,19 @@ class _HomePageState extends State<HomePage> {
                 return Column(
                   children: [
                     CarouselSlider(
+                      carouselController: _carouselController,
                       options: CarouselOptions(
-                        height: 220, // Altura ajustada para o layout horizontal
+                        height: 220,
                         enlargeCenterPage: true,
+                        initialPage: controller.carrosselIndex,
+                        enableInfiniteScroll: false,
                         onPageChanged: (index, reason) {
-                          setState(() {
-                            _currentCarouselIndex = index;
-                          });
+                          _onCarouselPageChanged(index);
                         },
                       ),
                       items: carouselItems.map((item) {
                         return Builder(
                           builder: (BuildContext context) {
-                            // Item "Adicionar Pet"
                             if (item == null) {
                               return GestureDetector(
                                 onTap: () async {
@@ -241,7 +256,6 @@ class _HomePageState extends State<HomePage> {
                               );
                             }
 
-                            // Item de pet - LAYOUT HORIZONTAL (imagem ao lado das informações)
                             return Container(
                               width: MediaQuery.of(context).size.width,
                               decoration: BoxDecoration(
@@ -254,7 +268,6 @@ class _HomePageState extends State<HomePage> {
                                     padding: const EdgeInsets.all(20.0),
                                     child: Row(
                                       children: [
-                                        // Foto do pet - MAIOR
                                         Container(
                                           width: 120,
                                           height: 120,
@@ -269,10 +282,7 @@ class _HomePageState extends State<HomePage> {
                                             child: _buildPetImage(item.imagem),
                                           ),
                                         ),
-
                                         const SizedBox(width: 20),
-
-                                        // Informações do pet - AO LADO DA IMAGEM
                                         Expanded(
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -309,8 +319,6 @@ class _HomePageState extends State<HomePage> {
                                       ],
                                     ),
                                   ),
-
-                                  // Ícone de editar no canto superior direito
                                   Positioned(
                                     top: 12,
                                     right: 12,
@@ -345,15 +353,17 @@ class _HomePageState extends State<HomePage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: carouselItems.asMap().entries.map((entry) {
-                        return Container(
-                          width: 8,
-                          height: 8,
-                          margin: const EdgeInsets.symmetric(horizontal: 2.0),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _currentCarouselIndex == entry.key
-                                ? Colors.white
-                                : Colors.white.withOpacity(0.5),
+                        return Observer(
+                          builder: (_) => Container(
+                            width: 8,
+                            height: 8,
+                            margin: const EdgeInsets.symmetric(horizontal: 2.0),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: controller.carrosselIndex == entry.key
+                                  ? Colors.white
+                                  : Colors.white.withOpacity(0.5),
+                            ),
                           ),
                         );
                       }).toList(),

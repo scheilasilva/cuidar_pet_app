@@ -68,7 +68,22 @@ abstract class _ExameControllerBase with Store {
     resetForm();
   }
 
-  // Criar novo exame com dados do bottom sheet
+  // NOVO: Criar novo exame com imagem
+  @action
+  Future<void> criarExameComImagem(String titulo, String descricao, String data, String tipo, String imagePath) async {
+    if (animalSelecionadoId == null) return;
+
+    final novoExame = ExameStoreFactory.novo(animalSelecionadoId!);
+    novoExame.titulo = titulo;
+    novoExame.descricao = descricao;
+    novoExame.dataRealizacao = data;
+    novoExame.tipo = tipo;
+
+    await _service.saveOrUpdateWithImage(novoExame.toModel(), imagePath);
+    await loadExamesByAnimal(animalSelecionadoId!);
+  }
+
+  // Criar novo exame sem imagem (mantém compatibilidade)
   @action
   Future<void> criarExame(String titulo, String descricao, String data, String tipo, String? imagem) async {
     if (animalSelecionadoId == null) return;
@@ -80,7 +95,12 @@ abstract class _ExameControllerBase with Store {
     novoExame.tipo = tipo;
     novoExame.imagem = imagem;
 
-    await _service.saveOrUpdate(novoExame.toModel());
+    if (imagem != null && imagem.isNotEmpty) {
+      await _service.saveOrUpdateWithImage(novoExame.toModel(), imagem);
+    } else {
+      await _service.saveOrUpdate(novoExame.toModel());
+    }
+
     await loadExamesByAnimal(animalSelecionadoId!);
   }
 

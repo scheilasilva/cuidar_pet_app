@@ -49,6 +49,48 @@ mixin _$AnimalController on _AnimalControllerBase, Store {
     });
   }
 
+  late final _$animalSelecionadoCarrosselAtom = Atom(
+      name: '_AnimalControllerBase.animalSelecionadoCarrossel',
+      context: context);
+
+  @override
+  AnimalStore? get animalSelecionadoCarrossel {
+    _$animalSelecionadoCarrosselAtom.reportRead();
+    return super.animalSelecionadoCarrossel;
+  }
+
+  @override
+  set animalSelecionadoCarrossel(AnimalStore? value) {
+    _$animalSelecionadoCarrosselAtom
+        .reportWrite(value, super.animalSelecionadoCarrossel, () {
+      super.animalSelecionadoCarrossel = value;
+    });
+  }
+
+  late final _$carrosselIndexAtom =
+      Atom(name: '_AnimalControllerBase.carrosselIndex', context: context);
+
+  @override
+  int get carrosselIndex {
+    _$carrosselIndexAtom.reportRead();
+    return super.carrosselIndex;
+  }
+
+  @override
+  set carrosselIndex(int value) {
+    _$carrosselIndexAtom.reportWrite(value, super.carrosselIndex, () {
+      super.carrosselIndex = value;
+    });
+  }
+
+  late final _$loadAnimaisAsyncAction =
+      AsyncAction('_AnimalControllerBase.loadAnimais', context: context);
+
+  @override
+  Future<void> loadAnimais() {
+    return _$loadAnimaisAsyncAction.run(() => super.loadAnimais());
+  }
+
   late final _$salvarAnimalAsyncAction =
       AsyncAction('_AnimalControllerBase.salvarAnimal', context: context);
 
@@ -79,6 +121,17 @@ mixin _$AnimalController on _AnimalControllerBase, Store {
       ActionController(name: '_AnimalControllerBase', context: context);
 
   @override
+  void setAnimalSelecionadoCarrossel(int index) {
+    final _$actionInfo = _$_AnimalControllerBaseActionController.startAction(
+        name: '_AnimalControllerBase.setAnimalSelecionadoCarrossel');
+    try {
+      return super.setAnimalSelecionadoCarrossel(index);
+    } finally {
+      _$_AnimalControllerBaseActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
   void resetForm() {
     final _$actionInfo = _$_AnimalControllerBaseActionController.startAction(
         name: '_AnimalControllerBase.resetForm');
@@ -94,6 +147,8 @@ mixin _$AnimalController on _AnimalControllerBase, Store {
     return '''
 animal: ${animal},
 animais: ${animais},
+animalSelecionadoCarrossel: ${animalSelecionadoCarrossel},
+carrosselIndex: ${carrosselIndex},
 isFormValid: ${isFormValid}
     ''';
   }
