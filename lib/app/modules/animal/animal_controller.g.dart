@@ -57,6 +57,24 @@ mixin _$AnimalController on _AnimalControllerBase, Store {
     return _$salvarAnimalAsyncAction.run(() => super.salvarAnimal());
   }
 
+  late final _$atualizarAnimalAsyncAction =
+      AsyncAction('_AnimalControllerBase.atualizarAnimal', context: context);
+
+  @override
+  Future<void> atualizarAnimal(AnimalStore animalParaAtualizar) {
+    return _$atualizarAnimalAsyncAction
+        .run(() => super.atualizarAnimal(animalParaAtualizar));
+  }
+
+  late final _$excluirAnimalAsyncAction =
+      AsyncAction('_AnimalControllerBase.excluirAnimal', context: context);
+
+  @override
+  Future<void> excluirAnimal(AnimalStore animalParaExcluir) {
+    return _$excluirAnimalAsyncAction
+        .run(() => super.excluirAnimal(animalParaExcluir));
+  }
+
   late final _$_AnimalControllerBaseActionController =
       ActionController(name: '_AnimalControllerBase', context: context);
 

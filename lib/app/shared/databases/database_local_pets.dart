@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:cuidar_pet_app/app/modules/animal/repositories/animal_repository.dart';
+import 'package:cuidar_pet_app/app/modules/user/repositories/user_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -23,14 +24,9 @@ class DatabaseLocalPets {
 
   Future<void> _onCreate(Database db, int version) async {
     var batch = db.batch();
-
-    // Criar tabela de animais
+    
     AnimalRepository().create(batch);
-
-    // Aqui você pode adicionar outras tabelas conforme necessário
-    // LembreteRepository().create(batch);
-    // VacinaRepository().create(batch);
-    // ConsultaRepository().create(batch);
+    UserRepository().create(batch);
 
     await batch.commit();
   }
