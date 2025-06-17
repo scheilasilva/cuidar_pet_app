@@ -1,7 +1,12 @@
+import 'package:cuidar_pet_app/app/modules/animal/animal_controller.dart';
+import 'package:cuidar_pet_app/app/modules/tratamento/tratamento_controller.dart';
 import 'package:cuidar_pet_app/app/shared/route/route.dart';
 import 'package:cuidar_pet_app/app/shared/widget/bottom_sheet_cadastros/bottom_sheet_cadastros.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:flutter_modular/flutter_modular.dart';
+import 'widgets/tratamento_card.dart';
+import 'widgets/tratamento_detalhes_bottom_sheet.dart';
 
 class TratamentoPage extends StatefulWidget {
   const TratamentoPage({super.key});
@@ -11,8 +16,105 @@ class TratamentoPage extends StatefulWidget {
 }
 
 class _TratamentoPageState extends State<TratamentoPage> {
+  final TratamentoController controller = Modular.get<TratamentoController>();
+  final AnimalController animalController = Modular.get<AnimalController>();
+
   // Estado para controlar qual filtro está selecionado
   bool _emAndamentoSelecionado = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeWithSelectedAnimal();
+  }
+
+  void _initializeWithSelectedAnimal() {
+    // Usar o animal selecionado do carrossel
+    if (animalController.animalSelecionadoCarrossel != null) {
+      controller.setAnimalSelecionado(animalController.animalSelecionadoCarrossel!.id);
+    } else if (animalController.animais.isNotEmpty) {
+      // Fallback: definir o primeiro animal como selecionado
+      animalController.setAnimalSelecionadoCarrossel(0);
+      controller.setAnimalSelecionado(animalController.animais.first.id);
+    }
+  }
+
+  void _showTratamentoDetalhes(dynamic tratamento) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => TratamentoDetalhesBottomSheet(
+        tratamento: tratamento,
+        onDelete: () async {
+          await controller.excluirTratamento(tratamento);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Tratamento excluído com sucesso!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        },
+        onToggleConcluido: (concluido) async {
+          await controller.toggleTratamentoConcluido(tratamento);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(concluido
+                    ? 'Tratamento marcado como concluído!'
+                    : 'Tratamento marcado como em andamento!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  void _showCadastroTratamento() {
+    if (controller.animalSelecionadoId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nenhum animal selecionado'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: BottomSheetCadastro(
+            titulo: 'Novo tratamento',
+            labelCampo1: 'Título do tratamento',
+            labelCampo2: 'Descrição do tratamento',
+            labelCampo3: 'Data de início do tratamento',
+            onSalvar: (titulo, descricao, data, tipo, imagem) async {
+              await controller.criarTratamento(titulo, descricao, data, tipo, imagem);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Tratamento cadastrado com sucesso!'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            },
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,8 +151,9 @@ class _TratamentoPageState extends State<TratamentoPage> {
         ),
       ),
       body: SafeArea(
-        child: Stack(
+        child: Column(
           children: [
+            // Header com botão adicionar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Column(
@@ -81,39 +184,24 @@ class _TratamentoPageState extends State<TratamentoPage> {
                           ),
                         ],
                       ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.add_circle_outline_sharp,
-                          size: 80,
+                      Container(
+                        decoration: const BoxDecoration(
                           color: Colors.white,
+                          shape: BoxShape.circle,
                         ),
-                        onPressed: () {
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            builder: (context) {
-                              return Padding(
-                                padding: EdgeInsets.only(
-                                  bottom: MediaQuery.of(context).viewInsets.bottom,
-                                ),
-                                child: BottomSheetCadastro(
-                                  titulo: 'Novo tratamento',
-                                  labelCampo1: 'Título do tratamento',
-                                  labelCampo2: 'Descrição do tratamento',
-                                  labelCampo3: 'Data realizada do tratamento',
-                                  onSalvar: (titulo, descricao, data, tipo, imagem) {
-                                    // Implemente aqui a lógica para salvar os dados
-                                  },
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      )
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.add,
+                            size: 32,
+                            color: Color(0xFF00845A),
+                          ),
+                          onPressed: _showCadastroTratamento,
+                        ),
+                      ),
                     ],
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
+
                   // Botões de filtro
                   Row(
                     children: [
@@ -126,15 +214,13 @@ class _TratamentoPageState extends State<TratamentoPage> {
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
+                            horizontal: 16,
                             vertical: 8,
                           ),
                           decoration: BoxDecoration(
                             color: _emAndamentoSelecionado
-                                ? const Color(
-                                    0xFF005A3E) // Verde mais escuro quando selecionado
+                                ? const Color(0xFF005A3E)
                                 : const Color(0xFF00936B),
-                            // Verde mais claro quando não selecionado
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Text(
@@ -178,19 +264,78 @@ class _TratamentoPageState extends State<TratamentoPage> {
                       ),
                     ],
                   ),
-
-                  // Aqui você pode adicionar o conteúdo específico para cada estado (Em andamento ou Concluídos)
-                  const SizedBox(height: 20),
-                  Text(
-                    _emAndamentoSelecionado
-                        ? 'Tratamentos em andamento'
-                        : 'Tratamentos concluídos',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                    ),
-                  ),
+                  const SizedBox(height: 30),
                 ],
+              ),
+            ),
+
+            // Lista de tratamentos - Cards diretamente no fundo verde
+            Expanded(
+              child: Observer(
+                builder: (_) {
+                  if (controller.isLoading) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                      ),
+                    );
+                  }
+
+                  final tratamentos = _emAndamentoSelecionado
+                      ? controller.tratamentosEmAndamento
+                      : controller.tratamentosConcluidos;
+
+                  if (tratamentos.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.medical_services_outlined,
+                            size: 64,
+                            color: Colors.white.withOpacity(0.5),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            _emAndamentoSelecionado
+                                ? 'Nenhum tratamento em andamento'
+                                : 'Nenhum tratamento concluído',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.white.withOpacity(0.8),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _emAndamentoSelecionado
+                                ? 'Adicione o primeiro tratamento do seu pet'
+                                : 'Marque tratamentos como concluídos',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white.withOpacity(0.6),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemCount: tratamentos.length,
+                    itemBuilder: (context, index) {
+                      final tratamento = tratamentos[index];
+                      return TratamentoCard(
+                        tratamento: tratamento,
+                        onTap: () => _showTratamentoDetalhes(tratamento),
+                        onCheckboxChanged: (value) async {
+                          await controller.toggleTratamentoConcluido(tratamento);
+                        },
+                      );
+                    },
+                  );
+                },
               ),
             ),
           ],
