@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:cuidar_pet_app/app/modules/animal/repositories/animal_repository.dart';
+import 'package:cuidar_pet_app/app/modules/consulta/repositories/consulta_repository.dart';
 import 'package:cuidar_pet_app/app/modules/exame/repositories/exame_repository.dart';
 import 'package:cuidar_pet_app/app/modules/tratamento/repositories/tratamento_repository.dart';
 import 'package:cuidar_pet_app/app/modules/user/repositories/user_repository.dart';
@@ -31,6 +32,7 @@ class DatabaseLocalPets {
     UserRepository().create(batch);
     ExameRepository().create(batch);
     TratamentoRepository().create(batch);
+    ConsultaRepository().create(batch);
 
     await batch.commit();
   }

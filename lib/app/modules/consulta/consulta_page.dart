@@ -1,10 +1,104 @@
+import 'package:cuidar_pet_app/app/modules/animal/animal_controller.dart';
+import 'package:cuidar_pet_app/app/modules/consulta/consulta_controller.dart';
 import 'package:cuidar_pet_app/app/shared/route/route.dart';
 import 'package:cuidar_pet_app/app/shared/widget/bottom_sheet_cadastros/bottom_sheet_cadastros.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:flutter_modular/flutter_modular.dart';
+import 'widgets/consulta_card.dart';
+import 'widgets/consulta_detalhes_bottom_sheet.dart';
 
-class ConsultaPage extends StatelessWidget {
+class ConsultaPage extends StatefulWidget {
   const ConsultaPage({super.key});
+
+  @override
+  State<ConsultaPage> createState() => _ConsultaPageState();
+}
+
+class _ConsultaPageState extends State<ConsultaPage> {
+  final ConsultaController controller = Modular.get<ConsultaController>();
+  final AnimalController animalController = Modular.get<AnimalController>();
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeWithSelectedAnimal();
+  }
+
+  void _initializeWithSelectedAnimal() {
+    // Usar o animal selecionado do carrossel
+    if (animalController.animalSelecionadoCarrossel != null) {
+      controller.setAnimalSelecionado(animalController.animalSelecionadoCarrossel!.id);
+    } else if (animalController.animais.isNotEmpty) {
+      // Fallback: definir o primeiro animal como selecionado
+      animalController.setAnimalSelecionadoCarrossel(0);
+      controller.setAnimalSelecionado(animalController.animais.first.id);
+    }
+  }
+
+  void _showConsultaDetalhes(dynamic consulta) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ConsultaDetalhesBottomSheet(
+        consulta: consulta,
+        onDelete: () async {
+          await controller.excluirConsulta(consulta);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Consulta excluída com sucesso!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  void _showCadastroConsulta() {
+    if (controller.animalSelecionadoId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nenhum animal selecionado'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: BottomSheetCadastro(
+            titulo: 'Nova consulta',
+            labelCampo1: 'Título da consulta',
+            labelCampo2: 'Descrição da consulta',
+            labelCampo3: 'Data da consulta',
+            onSalvar: (titulo, descricao, data, tipo, imagem) async {
+              await controller.criarConsulta(titulo, descricao, data, tipo, imagem);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Consulta cadastrada com sucesso!'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            },
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,8 +135,9 @@ class ConsultaPage extends StatelessWidget {
         ),
       ),
       body: SafeArea(
-        child: Stack(
+        child: Column(
           children: [
+            // Header com botão adicionar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Column(
@@ -73,40 +168,83 @@ class ConsultaPage extends StatelessWidget {
                           ),
                         ],
                       ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.add_circle_outline_sharp,
-                          size: 80,
+                      Container(
+                        decoration: const BoxDecoration(
                           color: Colors.white,
+                          shape: BoxShape.circle,
                         ),
-                        onPressed: () {
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            builder: (context) {
-                              return Padding(
-                                padding: EdgeInsets.only(
-                                  bottom: MediaQuery.of(context).viewInsets.bottom,
-                                ),
-                                child: BottomSheetCadastro(
-                                  titulo: 'Nova consulta',
-                                  labelCampo1: 'Título do consulta',
-                                  labelCampo2: 'Descrição do consulta',
-                                  labelCampo3: 'Data realizada do consulta',
-                                  onSalvar: (titulo, descricao, data, tipo, imagem) {
-                                    // Implemente aqui a lógica para salvar os dados
-                                  },
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      )
-
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.add,
+                            size: 32,
+                            color: Color(0xFF00845A),
+                          ),
+                          onPressed: _showCadastroConsulta,
+                        ),
+                      ),
                     ],
                   ),
+                  const SizedBox(height: 30),
                 ],
+              ),
+            ),
+
+            // Lista de consultas - Cards diretamente no fundo verde
+            Expanded(
+              child: Observer(
+                builder: (_) {
+                  if (controller.isLoading) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                      ),
+                    );
+                  }
+
+                  if (controller.consultas.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.local_hospital_outlined,
+                            size: 64,
+                            color: Colors.white.withOpacity(0.5),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Nenhuma consulta cadastrada',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.white.withOpacity(0.8),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Adicione a primeira consulta do seu pet',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white.withOpacity(0.6),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemCount: controller.consultas.length,
+                    itemBuilder: (context, index) {
+                      final consulta = controller.consultas[index];
+                      return ConsultaCard(
+                        consulta: consulta,
+                        onTap: () => _showConsultaDetalhes(consulta),
+                      );
+                    },
+                  );
+                },
               ),
             ),
           ],
