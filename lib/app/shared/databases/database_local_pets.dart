@@ -4,6 +4,7 @@ import 'package:cuidar_pet_app/app/modules/consulta/repositories/consulta_reposi
 import 'package:cuidar_pet_app/app/modules/exame/repositories/exame_repository.dart';
 import 'package:cuidar_pet_app/app/modules/tratamento/repositories/tratamento_repository.dart';
 import 'package:cuidar_pet_app/app/modules/user/repositories/user_repository.dart';
+import 'package:cuidar_pet_app/app/modules/vacinacao/repositories/vacinacao_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -33,6 +34,7 @@ class DatabaseLocalPets {
     ExameRepository().create(batch);
     TratamentoRepository().create(batch);
     ConsultaRepository().create(batch);
+    VacinacaoRepository().create(batch);
 
     await batch.commit();
   }
