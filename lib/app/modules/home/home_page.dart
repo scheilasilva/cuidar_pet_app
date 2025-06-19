@@ -416,7 +416,7 @@ class _HomePageState extends State<HomePage> {
                     MenuOption(
                       label: 'Emergência',
                       imagePath: 'assets/icons/first-aid-kit.png',
-                      onTap: () => _navigateToScreen('Emergência'),
+                      onTap: () => Modular.to.navigate('$emergenciaRoute/'),
                     ),
                     MenuOption(
                       label: 'Peso',

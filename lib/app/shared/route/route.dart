@@ -25,3 +25,5 @@ const calendarioRoute = 'calendario';
 const pesoRoute = 'peso';
 
 const cadastroAnimalRoute = 'cadastroAnimal';
+
+const emergenciaRoute = 'emergencia';

@@ -8,6 +8,7 @@ import 'package:cuidar_pet_app/app/modules/animal/services/animal_service.dart';
 import 'package:cuidar_pet_app/app/modules/animal/services/animal_service_interface.dart';
 import 'package:cuidar_pet_app/app/modules/calendario/calendario_module.dart';
 import 'package:cuidar_pet_app/app/modules/consulta/consulta_module.dart';
+import 'package:cuidar_pet_app/app/modules/emergencia/emergencia_module.dart';
 import 'package:cuidar_pet_app/app/modules/exame/exame_module.dart';
 import 'package:cuidar_pet_app/app/modules/home/home_page.dart';
 import 'package:cuidar_pet_app/app/modules/notificacoes/notificacoes_module.dart';
@@ -41,5 +42,6 @@ class HomeModule extends Module {
     r.module('/$calendarioRoute', module: CalendarioModule());
     r.module('/$pesoRoute', module: PesoModule());
     r.module('/$cadastroAnimalRoute', module: AnimalModule());
+    r.module('/$emergenciaRoute', module: EmergenciaModule());
   }
 }
