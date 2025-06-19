@@ -1,7 +1,12 @@
+import 'package:cuidar_pet_app/app/modules/animal/animal_controller.dart';
+import 'package:cuidar_pet_app/app/modules/calendario/calendario_controller.dart';
 import 'package:cuidar_pet_app/app/shared/route/route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'widgets/bottom_sheet_novo_lembrete.dart';
+import 'widgets/lembrete_card.dart';
 
 class CalendarioPage extends StatefulWidget {
   const CalendarioPage({super.key});
@@ -11,34 +16,66 @@ class CalendarioPage extends StatefulWidget {
 }
 
 class _CalendarioPageState extends State<CalendarioPage> {
+  final CalendarioController controller = Modular.get<CalendarioController>();
+  final AnimalController animalController = Modular.get<AnimalController>();
+
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
-  DateTime? _selectedDay;
-
-  // Lista de lembretes de exemplo
-  final List<Reminder> _reminders = [
-    Reminder(
-      title: 'Comprar ração do Pituco',
-      date: '22/10/2025',
-      daysAgo: 12,
-      color: Colors.purple.shade200,
-      icon: Icons.pets,
-      isCompleted: true,
-    ),
-    Reminder(
-      title: 'Comprar ração do Pituco',
-      date: '22/10/2025',
-      daysAgo: 12,
-      color: Colors.red.shade200,
-      icon: Icons.calendar_today,
-      isCompleted: true,
-    ),
-  ];
 
   @override
   void initState() {
     super.initState();
-    _selectedDay = _focusedDay;
+    _initializeWithSelectedAnimal();
+  }
+
+  void _initializeWithSelectedAnimal() {
+    // Usar o animal selecionado do carrossel
+    if (animalController.animalSelecionadoCarrossel != null) {
+      controller.setAnimalSelecionado(animalController.animalSelecionadoCarrossel!.id);
+    } else if (animalController.animais.isNotEmpty) {
+      // Fallback: definir o primeiro animal como selecionado
+      animalController.setAnimalSelecionadoCarrossel(0);
+      controller.setAnimalSelecionado(animalController.animais.first.id);
+    }
+  }
+
+  void _showNovoLembrete() {
+    if (controller.animalSelecionadoId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nenhum animal selecionado'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: BottomSheetNovoLembrete(
+            dataSelecionada: controller.dataSelecionada,
+            onSalvar: (titulo, descricao, data, categoria, concluido) async {
+              await controller.criarLembrete(titulo, descricao, data, categoria, concluido);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Lembrete criado com sucesso!'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            },
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -86,48 +123,58 @@ class _CalendarioPageState extends State<CalendarioPage> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: TableCalendar(
-                  firstDay: DateTime.utc(2020, 1, 1),
-                  lastDay: DateTime.utc(2030, 12, 31),
-                  focusedDay: _focusedDay,
-                  calendarFormat: _calendarFormat,
-                  selectedDayPredicate: (day) {
-                    return isSameDay(_selectedDay, day);
-                  },
-                  onDaySelected: (selectedDay, focusedDay) {
-                    setState(() {
-                      _selectedDay = selectedDay;
+                child: Observer(
+                  builder: (_) => TableCalendar(
+                    firstDay: DateTime.utc(2020, 1, 1),
+                    lastDay: DateTime.utc(2030, 12, 31),
+                    focusedDay: _focusedDay,
+                    calendarFormat: _calendarFormat,
+                    selectedDayPredicate: (day) {
+                      return isSameDay(controller.dataSelecionada, day);
+                    },
+                    onDaySelected: (selectedDay, focusedDay) {
+                      setState(() {
+                        _focusedDay = focusedDay;
+                      });
+                      controller.setDataSelecionada(selectedDay);
+                    },
+                    onFormatChanged: (format) {
+                      setState(() {
+                        _calendarFormat = format;
+                      });
+                    },
+                    onPageChanged: (focusedDay) {
                       _focusedDay = focusedDay;
-                    });
-                  },
-                  onFormatChanged: (format) {
-                    setState(() {
-                      _calendarFormat = format;
-                    });
-                  },
-                  onPageChanged: (focusedDay) {
-                    _focusedDay = focusedDay;
-                  },
-                  headerStyle: HeaderStyle(
-                    formatButtonVisible: false,
-                    titleCentered: false,
-                    leftChevronIcon: const Icon(Icons.chevron_left, color: Colors.black54),
-                    rightChevronIcon: const Icon(Icons.chevron_right, color: Colors.black54),
-                    titleTextStyle: const TextStyle(fontSize: 16),
-                    headerPadding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16.0),
-                  ),
-                  calendarStyle: CalendarStyle(
-                    todayDecoration: BoxDecoration(
-                      color: const Color(0xFF00845A).withOpacity(0.3),
-                      shape: BoxShape.circle,
+                    },
+                    eventLoader: (day) {
+                      // Mostrar indicador se há lembretes neste dia
+                      return controller.hasLembretesForDate(day) ? ['lembrete'] : [];
+                    },
+                    headerStyle: const HeaderStyle(
+                      formatButtonVisible: false,
+                      titleCentered: false,
+                      leftChevronIcon: Icon(Icons.chevron_left, color: Colors.black54),
+                      rightChevronIcon: Icon(Icons.chevron_right, color: Colors.black54),
+                      titleTextStyle: TextStyle(fontSize: 16),
+                      headerPadding: EdgeInsets.symmetric(vertical: 4.0, horizontal: 16.0),
                     ),
-                    selectedDecoration: const BoxDecoration(
-                      color: Color(0xFF00845A),
-                      shape: BoxShape.circle,
+                    calendarStyle: CalendarStyle(
+                      todayDecoration: BoxDecoration(
+                        color: const Color(0xFF00845A).withOpacity(0.3),
+                        shape: BoxShape.circle,
+                      ),
+                      selectedDecoration: const BoxDecoration(
+                        color: Color(0xFF00845A),
+                        shape: BoxShape.circle,
+                      ),
+                      weekendTextStyle: const TextStyle(color: Colors.red),
+                      outsideDaysVisible: true,
+                      outsideTextStyle: const TextStyle(color: Colors.grey),
+                      markerDecoration: const BoxDecoration(
+                        color: Color(0xFF00845A),
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                    weekendTextStyle: const TextStyle(color: Colors.red),
-                    outsideDaysVisible: true,
-                    outsideTextStyle: const TextStyle(color: Colors.grey),
                   ),
                 ),
               ),
@@ -138,9 +185,7 @@ class _CalendarioPageState extends State<CalendarioPage> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    // Implementar adição de lembrete
-                  },
+                  onPressed: _showNovoLembrete,
                   icon: const Icon(Icons.add_circle_outline_sharp),
                   label: const Text(
                     'Adicionar novo lembrete',
@@ -162,90 +207,72 @@ class _CalendarioPageState extends State<CalendarioPage> {
 
               const SizedBox(height: 16),
 
-              // Lista de lembretes
+              // Lista de lembretes da data selecionada
               Expanded(
-                child: ListView.builder(
-                  itemCount: _reminders.length,
-                  itemBuilder: (context, index) {
-                    final reminder = _reminders[index];
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Row(
+                child: Observer(
+                  builder: (_) {
+                    if (controller.isLoading) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                        ),
+                      );
+                    }
+
+                    if (controller.lembretesDataSelecionada.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // Ícone do lembrete
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: reminder.color,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                reminder.icon,
-                                color: Colors.white,
-                                size: 24,
+                            Icon(
+                              Icons.event_note_outlined,
+                              size: 64,
+                              color: Colors.white.withOpacity(0.5),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Nenhum lembrete para esta data',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.white.withOpacity(0.8),
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
-                            const SizedBox(width: 12),
-
-                            // Informações do lembrete
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    reminder.title,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  Text(
-                                    reminder.date,
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
+                            const SizedBox(height: 8),
+                            Text(
+                              'Adicione um lembrete para organizar sua agenda',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.white.withOpacity(0.6),
                               ),
-                            ),
-
-                            // Indicador de dias e status
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  'há ${reminder.daysAgo} dias',
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Container(
-                                  width: 24,
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF00845A),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: const Icon(
-                                    Icons.check,
-                                    color: Colors.white,
-                                    size: 16,
-                                  ),
-                                ),
-                              ],
+                              textAlign: TextAlign.center,
                             ),
                           ],
                         ),
-                      ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      itemCount: controller.lembretesDataSelecionada.length,
+                      itemBuilder: (context, index) {
+                        final lembrete = controller.lembretesDataSelecionada[index];
+                        return LembreteCard(
+                          lembrete: lembrete,
+                          onToggleConcluido: (concluido) async {
+                            await controller.marcarComoConcluido(lembrete, concluido);
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(concluido
+                                      ? 'Lembrete marcado como concluído!'
+                                      : 'Lembrete desmarcado como concluído!'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            }
+                          },
+                        );
+                      },
                     );
                   },
                 ),
@@ -256,23 +283,4 @@ class _CalendarioPageState extends State<CalendarioPage> {
       ),
     );
   }
-}
-
-// Modelo para lembretes
-class Reminder {
-  final String title;
-  final String date;
-  final int daysAgo;
-  final Color color;
-  final IconData icon;
-  final bool isCompleted;
-
-  Reminder({
-    required this.title,
-    required this.date,
-    required this.daysAgo,
-    required this.color,
-    required this.icon,
-    this.isCompleted = false,
-  });
 }

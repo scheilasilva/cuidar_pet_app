@@ -1,0 +1,342 @@
+import 'package:cuidar_pet_app/app/modules/calendario/widgets/categoria_helper.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
+class BottomSheetNovoLembrete extends StatefulWidget {
+  final DateTime dataSelecionada;
+  final Function(String titulo, String descricao, DateTime data, String categoria, bool concluido)? onSalvar;
+
+  const BottomSheetNovoLembrete({
+    super.key,
+    required this.dataSelecionada,
+    this.onSalvar,
+  });
+
+  @override
+  State<BottomSheetNovoLembrete> createState() => _BottomSheetNovoLembreteState();
+}
+
+class _BottomSheetNovoLembreteState extends State<BottomSheetNovoLembrete> {
+  final TextEditingController _tituloController = TextEditingController();
+  final TextEditingController _descricaoController = TextEditingController();
+
+  late DateTime _dataSelecionada;
+  String? _categoriaSelecionada;
+  bool _concluido = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _dataSelecionada = widget.dataSelecionada;
+  }
+
+  bool get _isFormValid {
+    return _tituloController.text.isNotEmpty &&
+        _descricaoController.text.isNotEmpty &&
+        _categoriaSelecionada != null;
+  }
+
+  void _salvar() {
+    if (_isFormValid && widget.onSalvar != null) {
+      widget.onSalvar!(
+        _tituloController.text,
+        _descricaoController.text,
+        _dataSelecionada,
+        _categoriaSelecionada!,
+        _concluido,
+      );
+      Navigator.pop(context);
+    }
+  }
+
+  Future<void> _selecionarData() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _dataSelecionada,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF00845A),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != _dataSelecionada) {
+      setState(() {
+        _dataSelecionada = picked;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle do bottom sheet
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          // Conteúdo
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header com título e data
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Novo lembrete',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: _selecionarData,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF00845A),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            DateFormat('dd/MM/yyyy').format(_dataSelecionada),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Campo Título do lembrete
+                  const Text(
+                    'Título do lembrete',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _tituloController,
+                    decoration: InputDecoration(
+                      hintText: 'Título do lembrete',
+                      hintStyle: TextStyle(color: Colors.grey[400]),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Contador de caracteres
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        '${_tituloController.text.length}/15',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Categoria
+                  const Text(
+                    'Categoria',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: CategoriaHelper.getTodasCategorias().map((categoria) {
+                      final isSelected = _categoriaSelecionada == categoria;
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _categoriaSelecionada = categoria;
+                          });
+                        },
+                        child: Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            color: CategoriaHelper.getCorCategoria(categoria),
+                            shape: BoxShape.circle,
+                            border: isSelected
+                                ? Border.all(color: Colors.black, width: 3)
+                                : null,
+                          ),
+                          child: Icon(
+                            CategoriaHelper.getIconeCategoria(categoria),
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Campo Descrição do lembrete
+                  const Text(
+                    'Descrição do lembrete',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _descricaoController,
+                    maxLines: 6,
+                    decoration: InputDecoration(
+                      hintText: 'Descrição',
+                      hintStyle: TextStyle(color: Colors.grey[400]),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Contador de caracteres para descrição
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        '${_descricaoController.text.length}/20',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Checkbox Concluído
+                  Row(
+                    children: [
+                      const Text(
+                        'Concluído:',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const Spacer(),
+                      Checkbox(
+                        value: _concluido,
+                        onChanged: (bool? value) {
+                          setState(() {
+                            _concluido = value ?? false;
+                          });
+                        },
+                        activeColor: const Color(0xFF00845A),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Botão Salvar
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isFormValid ? _salvar : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF00845A),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        disabledBackgroundColor: Colors.grey[300],
+                      ),
+                      child: const Text(
+                        'Salvar',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _tituloController.dispose();
+    _descricaoController.dispose();
+    super.dispose();
+  }
+}
