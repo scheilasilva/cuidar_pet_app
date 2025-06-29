@@ -126,7 +126,7 @@ class _PesoPageState extends State<PesoPage> {
                   children: [
                     const SizedBox(height: 20),
 
-                    // Header com botão adicionar
+                    // Header com botão adicionar - MESMO ESTILO DA VACINACAO
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -151,12 +151,18 @@ class _PesoPageState extends State<PesoPage> {
                             ),
                           ],
                         ),
-                        GestureDetector(
-                          onTap: _showNovoPeso,
-                          child: const Icon(
-                            Icons.add_circle_outline_sharp,
-                            size: 80,
+                        Container(
+                          decoration: const BoxDecoration(
                             color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: IconButton(
+                            icon: const Icon(
+                              Icons.add,
+                              size: 32,
+                              color: Color(0xFF00845A),
+                            ),
+                            onPressed: _showNovoPeso,
                           ),
                         ),
                       ],
@@ -208,7 +214,7 @@ class _PesoPageState extends State<PesoPage> {
                 children: [
                   const SizedBox(height: 20),
 
-                  // Header com botão adicionar
+                  // Header com botão adicionar - MESMO ESTILO DA VACINACAO
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -233,12 +239,18 @@ class _PesoPageState extends State<PesoPage> {
                           ),
                         ],
                       ),
-                      GestureDetector(
-                        onTap: _showNovoPeso,
-                        child: const Icon(
-                          Icons.add_circle_outline_sharp,
-                          size: 80,
+                      Container(
+                        decoration: const BoxDecoration(
                           color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.add,
+                            size: 32,
+                            color: Color(0xFF00845A),
+                          ),
+                          onPressed: _showNovoPeso,
                         ),
                       ),
                     ],
