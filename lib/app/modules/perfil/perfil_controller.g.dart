@@ -95,9 +95,10 @@ mixin _$PerfilController on _PerfilControllerBase, Store {
       AsyncAction('_PerfilControllerBase.alterarSenha', context: context);
 
   @override
-  Future<void> alterarSenha(String senhaAtual, String novaSenha) {
+  Future<void> alterarSenha(
+      String senhaAtual, String novaSenha, String confirmaSenha) {
     return _$alterarSenhaAsyncAction
-        .run(() => super.alterarSenha(senhaAtual, novaSenha));
+        .run(() => super.alterarSenha(senhaAtual, novaSenha, confirmaSenha));
   }
 
   late final _$excluirContaAsyncAction =

@@ -1,10 +1,11 @@
+import 'dart:io';
+
 import 'package:cuidar_pet_app/app/modules/perfil/perfil_controller.dart';
 import 'package:cuidar_pet_app/app/shared/route/route.dart';
 import 'package:cuidar_pet_app/app/shared/widget/bottom_sheet_perfil/bottom_sheet_perfil.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:flutter_modular/flutter_modular.dart';
-import 'dart:io';
 
 class PerfilPage extends StatefulWidget {
   const PerfilPage({super.key});
@@ -16,9 +17,11 @@ class PerfilPage extends StatefulWidget {
 class _PerfilPageState extends State<PerfilPage> {
   final PerfilController controller = Modular.get<PerfilController>();
 
-  final TextEditingController _currentPasswordController = TextEditingController();
+  final TextEditingController _currentPasswordController =
+  TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+  TextEditingController();
 
   bool _obscureCurrentPassword = true;
   bool _obscureNewPassword = true;
@@ -38,29 +41,36 @@ class _PerfilPageState extends State<PerfilPage> {
     super.dispose();
   }
 
-  void _savePassword() async {
-    // Validar senhas
-    if (_currentPasswordController.text.isEmpty ||
-        _newPasswordController.text.isEmpty ||
-        _confirmPasswordController.text.isEmpty) {
-      _showSnackBar('Preencha todos os campos');
+  void _handleSubmit() {
+    // Validação básica da senha atual
+    String? currentPasswordError = controller.validatePasswordBasic(_currentPasswordController.text);
+    if (currentPasswordError != null) {
+      controller.setError(currentPasswordError);
       return;
     }
 
+    // Validação completa da nova senha
+    String? newPasswordError = controller.validatePasswordComplete(_newPasswordController.text);
+    if (newPasswordError != null) {
+      controller.setError(newPasswordError);
+      return;
+    }
+
+    // Validar confirmação de senha
     if (_newPasswordController.text != _confirmPasswordController.text) {
-      _showSnackBar('As senhas não coincidem');
+      controller.setError('As senhas não coincidem');
       return;
     }
 
-    if (_newPasswordController.text.length < 6) {
-      _showSnackBar('A nova senha deve ter pelo menos 6 caracteres');
-      return;
-    }
-
-    await controller.alterarSenha(
+    controller.alterarSenha(
       _currentPasswordController.text,
       _newPasswordController.text,
+      _confirmPasswordController.text,
     );
+  }
+
+  void _savePassword() async {
+    _handleSubmit();
 
     if (controller.errorMessage == null) {
       _showSnackBar('Senha alterada com sucesso!');
@@ -114,7 +124,8 @@ class _PerfilPageState extends State<PerfilPage> {
   Widget _buildProfileImage() {
     return Observer(
       builder: (_) {
-        if (controller.user.imagem != null && controller.user.imagem!.isNotEmpty) {
+        if (controller.user.imagem != null &&
+            controller.user.imagem!.isNotEmpty) {
           final file = File(controller.user.imagem!);
           if (file.existsSync()) {
             return ClipOval(
@@ -199,22 +210,34 @@ class _PerfilPageState extends State<PerfilPage> {
                       margin: const EdgeInsets.only(bottom: 16),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.red.shade100,
+                        color: controller.errorMessage!.contains('sucesso')
+                            ? Colors.green.shade100
+                            : Colors.red.shade100,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.red.shade300),
+                        border: Border.all(
+                          color: controller.errorMessage!.contains('sucesso')
+                              ? Colors.green.shade300
+                              : Colors.red.shade300,
+                        ),
                       ),
                       child: Row(
                         children: [
                           Expanded(
                             child: Text(
                               controller.errorMessage!,
-                              style: TextStyle(color: Colors.red.shade700),
+                              style: TextStyle(
+                                color: controller.errorMessage!.contains('sucesso')
+                                    ? Colors.green.shade700
+                                    : Colors.red.shade700,
+                              ),
                             ),
                           ),
                           IconButton(
                             icon: const Icon(Icons.close),
                             onPressed: controller.clearError,
-                            color: Colors.red.shade700,
+                            color: controller.errorMessage!.contains('sucesso')
+                                ? Colors.green.shade700
+                                : Colors.red.shade700,
                           ),
                         ],
                       ),
@@ -235,7 +258,6 @@ class _PerfilPageState extends State<PerfilPage> {
                           child: Column(
                             children: [
                               _buildProfileImage(),
-                              const SizedBox(height: 8),
                               ElevatedButton(
                                 onPressed: () async {
                                   await showModalBottomSheet(
@@ -310,7 +332,7 @@ class _PerfilPageState extends State<PerfilPage> {
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
                   // Alterar senha
                   Container(
@@ -330,7 +352,7 @@ class _PerfilPageState extends State<PerfilPage> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 8),
 
                         // Campo de senha atual
                         const Text(
@@ -340,7 +362,6 @@ class _PerfilPageState extends State<PerfilPage> {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        const SizedBox(height: 8),
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.grey[200],
@@ -349,10 +370,16 @@ class _PerfilPageState extends State<PerfilPage> {
                           child: TextField(
                             controller: _currentPasswordController,
                             obscureText: _obscureCurrentPassword,
+                            onChanged: (value) {
+                              // Limpar erro quando o usuário começar a digitar
+                              if (controller.errorMessage != null) {
+                                controller.clearError();
+                              }
+                            },
                             decoration: InputDecoration(
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,
-                                vertical: 16,
+                                vertical: 12,
                               ),
                               border: InputBorder.none,
                               suffixIcon: IconButton(
@@ -364,7 +391,8 @@ class _PerfilPageState extends State<PerfilPage> {
                                 ),
                                 onPressed: () {
                                   setState(() {
-                                    _obscureCurrentPassword = !_obscureCurrentPassword;
+                                    _obscureCurrentPassword =
+                                    !_obscureCurrentPassword;
                                   });
                                 },
                               ),
@@ -372,7 +400,7 @@ class _PerfilPageState extends State<PerfilPage> {
                           ),
                         ),
 
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 8),
 
                         // Campo de nova senha
                         const Text(
@@ -382,7 +410,6 @@ class _PerfilPageState extends State<PerfilPage> {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        const SizedBox(height: 8),
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.grey[200],
@@ -391,10 +418,16 @@ class _PerfilPageState extends State<PerfilPage> {
                           child: TextField(
                             controller: _newPasswordController,
                             obscureText: _obscureNewPassword,
+                            onChanged: (value) {
+                              // Limpar erro quando o usuário começar a digitar
+                              if (controller.errorMessage != null) {
+                                controller.clearError();
+                              }
+                            },
                             decoration: InputDecoration(
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,
-                                vertical: 16,
+                                vertical: 12,
                               ),
                               border: InputBorder.none,
                               suffixIcon: IconButton(
@@ -414,7 +447,7 @@ class _PerfilPageState extends State<PerfilPage> {
                           ),
                         ),
 
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 8),
 
                         // Campo de confirmar senha
                         const Text(
@@ -424,7 +457,6 @@ class _PerfilPageState extends State<PerfilPage> {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        const SizedBox(height: 8),
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.grey[200],
@@ -433,10 +465,16 @@ class _PerfilPageState extends State<PerfilPage> {
                           child: TextField(
                             controller: _confirmPasswordController,
                             obscureText: _obscureConfirmPassword,
+                            onChanged: (value) {
+                              // Limpar erro quando o usuário começar a digitar
+                              if (controller.errorMessage != null) {
+                                controller.clearError();
+                              }
+                            },
                             decoration: InputDecoration(
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,
-                                vertical: 16,
+                                vertical: 12,
                               ),
                               border: InputBorder.none,
                               suffixIcon: IconButton(
@@ -448,7 +486,8 @@ class _PerfilPageState extends State<PerfilPage> {
                                 ),
                                 onPressed: () {
                                   setState(() {
-                                    _obscureConfirmPassword = !_obscureConfirmPassword;
+                                    _obscureConfirmPassword =
+                                    !_obscureConfirmPassword;
                                   });
                                 },
                               ),
@@ -456,13 +495,14 @@ class _PerfilPageState extends State<PerfilPage> {
                           ),
                         ),
 
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
 
                         // Botão salvar
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: controller.isLoading ? null : _savePassword,
+                            onPressed:
+                            controller.isLoading ? null : _savePassword,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF00845A),
                               foregroundColor: Colors.white,
@@ -493,7 +533,7 @@ class _PerfilPageState extends State<PerfilPage> {
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
                   // Desativar conta
                   Container(
@@ -513,12 +553,14 @@ class _PerfilPageState extends State<PerfilPage> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 8),
                         // Botão desativar
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton(
-                            onPressed: controller.isLoading ? null : _showDeactivateDialog,
+                            onPressed: controller.isLoading
+                                ? null
+                                : _showDeactivateDialog,
                             style: OutlinedButton.styleFrom(
                               foregroundColor: Colors.red,
                               side: const BorderSide(color: Colors.red),

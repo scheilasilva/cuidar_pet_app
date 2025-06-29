@@ -26,21 +26,57 @@ abstract class _PerfilControllerBase with Store {
     return u.nome.isNotEmpty && u.email.isNotEmpty;
   }
 
+  @action
+  void setLoading(bool loading) {
+    isLoading = loading;
+  }
+
+  @action
+  void setError(String? error) {
+    errorMessage = error;
+  }
+
+  @action
+  void clearError() {
+    errorMessage = null;
+  }
+
+  // Validação básica da senha (para senha atual)
+  String? validatePasswordBasic(String password) {
+    if (password.isEmpty) {
+      return 'Senha é obrigatória';
+    }
+    return null;
+  }
+
+  // Validação completa da senha (para nova senha)
+  String? validatePasswordComplete(String password) {
+    if (password.isEmpty) {
+      return 'Senha é obrigatória';
+    }
+
+    if (password.length < 6) {
+      return 'A senha deve conter pelo menos 6 caracteres';
+    }
+
+    return null;
+  }
+
   // Carregar usuário atual
   @action
   Future<void> loadCurrentUser() async {
     try {
-      isLoading = true;
-      errorMessage = null;
+      setLoading(true);
+      clearError();
 
       final currentUser = await _service.getCurrentUser();
       if (currentUser != null) {
         user = UserStoreFactory.fromModel(currentUser);
       }
     } catch (e) {
-      errorMessage = 'Erro ao carregar perfil: $e';
+      setError('Erro ao carregar perfil: $e');
     } finally {
-      isLoading = false;
+      setLoading(false);
     }
   }
 
@@ -48,15 +84,15 @@ abstract class _PerfilControllerBase with Store {
   @action
   Future<void> salvarPerfil() async {
     try {
-      isLoading = true;
-      errorMessage = null;
+      setLoading(true);
+      clearError();
 
       await _service.saveOrUpdate(user.toModel());
       await loadCurrentUser();
     } catch (e) {
-      errorMessage = 'Erro ao salvar perfil: $e';
+      setError('Erro ao salvar perfil: $e');
     } finally {
-      isLoading = false;
+      setLoading(false);
     }
   }
 
@@ -64,30 +100,50 @@ abstract class _PerfilControllerBase with Store {
   @action
   Future<void> atualizarPerfilComImagem(String imagePath) async {
     try {
-      isLoading = true;
-      errorMessage = null;
+      setLoading(true);
+      clearError();
 
       await _service.updateWithImage(user.toModel(), imagePath);
       await loadCurrentUser();
     } catch (e) {
-      errorMessage = 'Erro ao atualizar perfil: $e';
+      setError('Erro ao atualizar perfil: $e');
     } finally {
-      isLoading = false;
+      setLoading(false);
     }
   }
 
   // Alterar senha
   @action
-  Future<void> alterarSenha(String senhaAtual, String novaSenha) async {
+  Future<void> alterarSenha(String senhaAtual, String novaSenha, String confirmaSenha) async {
     try {
-      isLoading = true;
-      errorMessage = null;
+      setLoading(true);
+      clearError();
+
+      // Validação básica da senha atual
+      String? currentPasswordError = validatePasswordBasic(senhaAtual);
+      if (currentPasswordError != null) {
+        setError(currentPasswordError);
+        return;
+      }
+
+      // Validação completa da nova senha
+      String? newPasswordError = validatePasswordComplete(novaSenha);
+      if (newPasswordError != null) {
+        setError(newPasswordError);
+        return;
+      }
+
+      // Validar se as senhas coincidem
+      if (novaSenha != confirmaSenha) {
+        setError('As senhas não coincidem');
+        return;
+      }
 
       await _service.updatePassword(senhaAtual, novaSenha);
     } catch (e) {
-      errorMessage = e.toString().replaceAll('Exception: ', '');
+      setError(_getErrorMessage(e.toString()));
     } finally {
-      isLoading = false;
+      setLoading(false);
     }
   }
 
@@ -95,27 +151,39 @@ abstract class _PerfilControllerBase with Store {
   @action
   Future<void> excluirConta() async {
     try {
-      isLoading = true;
-      errorMessage = null;
+      setLoading(true);
+      clearError();
 
       await _service.delete(user.toModel());
       user = UserStoreFactory.novo();
     } catch (e) {
-      errorMessage = 'Erro ao excluir conta: $e';
+      setError('Erro ao excluir conta: $e');
     } finally {
-      isLoading = false;
+      setLoading(false);
     }
-  }
-
-  // Limpar erro
-  @action
-  void clearError() {
-    errorMessage = null;
   }
 
   // Resetar formulário
   @action
   void resetForm() {
     user = UserStoreFactory.novo();
+  }
+
+  String _getErrorMessage(String error) {
+    if (error.contains('user-not-found')) {
+      return 'Usuário não encontrado';
+    } else if (error.contains('wrong-password')) {
+      return 'Senha incorreta';
+    } else if (error.contains('email-already-in-use')) {
+      return 'Este email já está em uso';
+    } else if (error.contains('weak-password')) {
+      return 'A senha deve conter pelo menos 6 caracteres';
+    } else if (error.contains('invalid-email')) {
+      return 'Email inválido';
+    } else if (error.contains('network-request-failed')) {
+      return 'Erro de conexão. Verifique sua internet';
+    } else {
+      return 'Erro inesperado. Tente novamente';
+    }
   }
 }
