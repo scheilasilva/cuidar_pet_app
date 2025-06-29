@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:cuidar_pet_app/app/modules/animal/animal_controller.dart';
 import 'package:cuidar_pet_app/app/modules/animal/store/animal_store.dart';
+import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -37,11 +38,16 @@ class _EditarPetBottomSheetState extends State<EditarPetBottomSheet> {
     'Pássaro',
     'Roedor',
     'Peixe',
-    'Réptil',
-    'Outro'
+    'Bovino',
+    'Equino',
+    'Suíno',
+    'Ovino',
+    'Galináceos',
+    'Caprinos',
+    'Outros',
   ];
 
-  final List<String> _generos = ['Macho', 'Fêmea'];
+  final List<String> _generos = ['Macho', 'Fêmea', 'Não identificado'];
 
   @override
   void initState() {
@@ -75,6 +81,86 @@ class _EditarPetBottomSheetState extends State<EditarPetBottomSheet> {
     _nomeController.dispose();
     _dataController.dispose();
     super.dispose();
+  }
+
+  Widget _buildDropdown2({
+    required String? value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+    String? hint,
+  }) {
+    return DropdownButton2<String>(
+      isExpanded: true,
+      hint: hint != null
+          ? Text(
+              hint,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
+            )
+          : null,
+      items: items
+          .map((String item) => DropdownMenuItem<String>(
+                value: item,
+                child: Text(
+                  item,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black87,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ))
+          .toList(),
+      value: value,
+      onChanged: onChanged,
+      buttonStyleData: ButtonStyleData(
+        height: 50,
+        width: double.infinity,
+        padding: const EdgeInsets.only(left: 16, right: 14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          color: Colors.grey[200],
+          border: Border.all(color: Colors.transparent),
+        ),
+        elevation: 0,
+      ),
+      iconStyleData: const IconStyleData(
+        icon: Icon(
+          Icons.arrow_drop_down,
+          color: Colors.black45,
+        ),
+        iconSize: 24,
+      ),
+      dropdownStyleData: DropdownStyleData(
+        maxHeight: 200,
+        width: null,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        offset: const Offset(0, -5),
+        scrollbarTheme: ScrollbarThemeData(
+          radius: const Radius.circular(40),
+          thickness: MaterialStateProperty.all<double>(6),
+          thumbVisibility: MaterialStateProperty.all<bool>(true),
+        ),
+      ),
+      menuItemStyleData: const MenuItemStyleData(
+        height: 40,
+        padding: EdgeInsets.symmetric(horizontal: 16),
+      ),
+      underline: Container(),
+    );
   }
 
   Widget _buildPetImage() {
@@ -132,6 +218,9 @@ class _EditarPetBottomSheetState extends State<EditarPetBottomSheet> {
   Future<void> _selecionarImagem() async {
     showModalBottomSheet(
       context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (BuildContext context) {
         return SafeArea(
           child: Wrap(
@@ -310,25 +399,23 @@ class _EditarPetBottomSheetState extends State<EditarPetBottomSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Título
-                      const Center(
-                        child: Text(
-                          'Editar Pet',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      const Text(
+                        'Editar Pet',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 8),
 
                       // Foto do pet
                       Center(
                         child: GestureDetector(
                           onTap: _selecionarImagem,
                           child: Container(
-                            width: 80,
-                            height: 80,
+                            width: 180,
+                            height: 180,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
@@ -341,7 +428,7 @@ class _EditarPetBottomSheetState extends State<EditarPetBottomSheet> {
                         ),
                       ),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 8),
 
                       // Campo Nome
                       const Text(
@@ -352,7 +439,6 @@ class _EditarPetBottomSheetState extends State<EditarPetBottomSheet> {
                           color: Colors.black87,
                         ),
                       ),
-                      const SizedBox(height: 8),
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.grey[200],
@@ -370,7 +456,7 @@ class _EditarPetBottomSheetState extends State<EditarPetBottomSheet> {
                         ),
                       ),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 8),
 
                       // Campo Tipo do pet
                       const Text(
@@ -381,36 +467,18 @@ class _EditarPetBottomSheetState extends State<EditarPetBottomSheet> {
                           color: Colors.black87,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: DropdownButtonFormField<String>(
-                          decoration: const InputDecoration(
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            border: InputBorder.none,
-                          ),
-                          value: _tipoSelecionado,
-                          items: _tiposAnimais.map((tipo) {
-                            return DropdownMenuItem<String>(
-                              value: tipo,
-                              child: Text(tipo),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _tipoSelecionado = value;
-                            });
-                          },
-                        ),
+                      _buildDropdown2(
+                        value: _tipoSelecionado,
+                        items: _tiposAnimais,
+                        hint: 'Selecione o tipo',
+                        onChanged: (value) {
+                          setState(() {
+                            _tipoSelecionado = value;
+                          });
+                        },
                       ),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 8),
 
                       // Campo Gênero
                       const Text(
@@ -421,47 +489,28 @@ class _EditarPetBottomSheetState extends State<EditarPetBottomSheet> {
                           color: Colors.black87,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: DropdownButtonFormField<String>(
-                          decoration: const InputDecoration(
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            border: InputBorder.none,
-                          ),
-                          value: _generoSelecionado,
-                          items: _generos.map((genero) {
-                            return DropdownMenuItem<String>(
-                              value: genero,
-                              child: Text(genero),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _generoSelecionado = value;
-                            });
-                          },
-                        ),
+                      _buildDropdown2(
+                        value: _generoSelecionado,
+                        items: _generos,
+                        hint: 'Selecione o gênero',
+                        onChanged: (value) {
+                          setState(() {
+                            _generoSelecionado = value;
+                          });
+                        },
                       ),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 8),
 
                       // Campo Idade
                       const Text(
-                        'Idade (anos)',
+                        'Idade',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                           color: Colors.black87,
                         ),
                       ),
-                      const SizedBox(height: 8),
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.grey[200],
@@ -484,7 +533,7 @@ class _EditarPetBottomSheetState extends State<EditarPetBottomSheet> {
                         ),
                       ),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 8),
 
                       // Campo Peso
                       const Text(
@@ -495,7 +544,6 @@ class _EditarPetBottomSheetState extends State<EditarPetBottomSheet> {
                           color: Colors.black87,
                         ),
                       ),
-                      const SizedBox(height: 8),
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.grey[200],
@@ -518,7 +566,7 @@ class _EditarPetBottomSheetState extends State<EditarPetBottomSheet> {
                         ),
                       ),
 
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 16),
 
                       // Botão Salvar
                       SizedBox(
@@ -543,7 +591,7 @@ class _EditarPetBottomSheetState extends State<EditarPetBottomSheet> {
                         ),
                       ),
 
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
 
                       // Botão Excluir pet
                       SizedBox(
@@ -567,8 +615,6 @@ class _EditarPetBottomSheetState extends State<EditarPetBottomSheet> {
                           ),
                         ),
                       ),
-
-                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
