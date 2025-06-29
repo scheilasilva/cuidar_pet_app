@@ -29,35 +29,44 @@ class _AutenticacaoPageState extends State<AutenticacaoPage> {
   }
 
   void _handleSubmit() {
-    // Validar email
-    String? emailError = controller.validateEmail(emailController.text);
-    if (emailError != null) {
-      controller.setError(emailError);
-      return;
-    }
-
-    // Validar senha
-    String? passwordError = controller.validatePassword(passwordController.text);
-    if (passwordError != null) {
-      controller.setError(passwordError);
-      return;
-    }
-
-    // Validar confirmação de senha no cadastro
-    if (!controller.isLogin) {
-      if (passwordController.text != confirmPasswordController.text) {
-        controller.setError('As senhas não coincidem');
+    if (controller.isLogin) {
+      // LOGIN: validações básicas
+      String? emailError = controller.validateEmailBasic(emailController.text);
+      if (emailError != null) {
+        controller.setError(emailError);
         return;
       }
-    }
 
-    // Se chegou até aqui, todos os campos são válidos
-    if (controller.isLogin) {
+      String? passwordError = controller.validatePasswordBasic(passwordController.text);
+      if (passwordError != null) {
+        controller.setError(passwordError);
+        return;
+      }
+
       controller.login(
         emailController.text,
         passwordController.text,
       );
     } else {
+      // CADASTRO: validações completas
+      String? emailError = controller.validateEmailComplete(emailController.text);
+      if (emailError != null) {
+        controller.setError(emailError);
+        return;
+      }
+
+      String? passwordError = controller.validatePasswordComplete(passwordController.text);
+      if (passwordError != null) {
+        controller.setError(passwordError);
+        return;
+      }
+
+      // Validar confirmação de senha no cadastro
+      if (passwordController.text != confirmPasswordController.text) {
+        controller.setError('As senhas não coincidem');
+        return;
+      }
+
       controller.register(
         nameController.text,
         emailController.text,
@@ -75,7 +84,7 @@ class _AutenticacaoPageState extends State<AutenticacaoPage> {
     }
 
     // Validar email antes de enviar
-    String? emailError = controller.validateEmail(emailController.text);
+    String? emailError = controller.validateEmailBasic(emailController.text);
     if (emailError != null) {
       controller.setError(emailError);
       return;
@@ -210,7 +219,6 @@ class _AutenticacaoPageState extends State<AutenticacaoPage> {
                         const Text('Nome',
                             style: TextStyle(
                                 fontSize: 14, fontWeight: FontWeight.w500)),
-                        const SizedBox(height: 8),
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.grey[200],
@@ -232,13 +240,12 @@ class _AutenticacaoPageState extends State<AutenticacaoPage> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 8),
                       ],
 
                       const Text('Email',
                           style: TextStyle(
                               fontSize: 14, fontWeight: FontWeight.w500)),
-                      const SizedBox(height: 8),
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.grey[200],
@@ -260,12 +267,11 @@ class _AutenticacaoPageState extends State<AutenticacaoPage> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 8),
 
                       const Text('Senha',
                           style: TextStyle(
                               fontSize: 14, fontWeight: FontWeight.w500)),
-                      const SizedBox(height: 8),
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.grey[200],
@@ -297,11 +303,10 @@ class _AutenticacaoPageState extends State<AutenticacaoPage> {
                       ),
 
                       if (!controller.isLogin) ...[
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 8),
                         const Text('Confirmar senha',
                             style: TextStyle(
                                 fontSize: 14, fontWeight: FontWeight.w500)),
-                        const SizedBox(height: 8),
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.grey[200],
@@ -344,7 +349,7 @@ class _AutenticacaoPageState extends State<AutenticacaoPage> {
                           ),
                         ),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
 
                       // Botão principal com loading
                       SizedBox(
@@ -381,7 +386,7 @@ class _AutenticacaoPageState extends State<AutenticacaoPage> {
 
                       // Botão do Google (apenas no login)
                       if (controller.isLogin) ...[
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
                         const Row(
                           children: [
                             Expanded(child: Divider()),
@@ -392,7 +397,7 @@ class _AutenticacaoPageState extends State<AutenticacaoPage> {
                             Expanded(child: Divider()),
                           ],
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(

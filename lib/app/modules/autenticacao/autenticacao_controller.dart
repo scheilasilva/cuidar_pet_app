@@ -56,9 +56,16 @@ abstract class _AutenticacaoControllerBase with Store {
     errorMessage = null;
   }
 
+  // Validação básica do email (para login e cadastro)
+  String? validateEmailBasic(String email) {
+    if (email.trim().isEmpty) {
+      return 'Email é obrigatório';
+    }
+    return null;
+  }
 
-  // Validação do email
-  String? validateEmail(String email) {
+  // Validação completa do email (apenas para cadastro)
+  String? validateEmailComplete(String email) {
     if (email.trim().isEmpty) {
       return 'Email é obrigatório';
     }
@@ -76,35 +83,21 @@ abstract class _AutenticacaoControllerBase with Store {
     return null;
   }
 
-  // Validação da senha
-  String? validatePassword(String password) {
+  // Validação básica da senha (para login)
+  String? validatePasswordBasic(String password) {
+    if (password.isEmpty) {
+      return 'Senha é obrigatória';
+    }
+    return null;
+  }
+
+  // Validação completa da senha (apenas para cadastro)
+  String? validatePasswordComplete(String password) {
     if (password.isEmpty) {
       return 'Senha é obrigatória';
     }
 
-    if (password.length < 8) {
-      return 'Senha deve ter pelo menos 8 caracteres';
-    }
 
-    // Verificar se contém pelo menos uma letra maiúscula
-    if (!RegExp(r'[A-Z]').hasMatch(password)) {
-      return 'Senha deve conter pelo menos uma letra maiúscula';
-    }
-
-    // Verificar se contém pelo menos uma letra minúscula
-    if (!RegExp(r'[a-z]').hasMatch(password)) {
-      return 'Senha deve conter pelo menos uma letra minúscula';
-    }
-
-    // Verificar se contém pelo menos um número
-    if (!RegExp(r'[0-9]').hasMatch(password)) {
-      return 'Senha deve conter pelo menos um número';
-    }
-
-    // Verificar se contém pelo menos um caractere especial
-    if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password)) {
-      return 'Senha deve conter pelo menos um caractere especial';
-    }
 
     return null;
   }
@@ -115,15 +108,14 @@ abstract class _AutenticacaoControllerBase with Store {
       setLoading(true);
       clearError();
 
-      // Validar email
-      String? emailError = validateEmail(email);
+      // Para LOGIN: apenas validações básicas
+      String? emailError = validateEmailBasic(email);
       if (emailError != null) {
         setError(emailError);
         return;
       }
 
-      // Validar senha
-      String? passwordError = validatePassword(password);
+      String? passwordError = validatePasswordBasic(password);
       if (passwordError != null) {
         setError(passwordError);
         return;
@@ -135,7 +127,8 @@ abstract class _AutenticacaoControllerBase with Store {
         Modular.to.navigate('/$homeRoute');
       }
     } catch (e) {
-      setError(_getErrorMessage(e.toString()));
+      // Para LOGIN: mensagem genérica de erro
+      setError('Email ou senha incorretos');
     } finally {
       setLoading(false);
     }
@@ -147,15 +140,14 @@ abstract class _AutenticacaoControllerBase with Store {
       setLoading(true);
       clearError();
 
-      // Validar email
-      String? emailError = validateEmail(email);
+      // Para CADASTRO: validações completas
+      String? emailError = validateEmailComplete(email);
       if (emailError != null) {
         setError(emailError);
         return;
       }
 
-      // Validar senha
-      String? passwordError = validatePassword(password);
+      String? passwordError = validatePasswordComplete(password);
       if (passwordError != null) {
         setError(passwordError);
         return;
@@ -191,7 +183,7 @@ abstract class _AutenticacaoControllerBase with Store {
         Modular.to.navigate('/$homeRoute');
       }
     } catch (e) {
-      setError(_getErrorMessage(e.toString()));
+      setError('Erro ao fazer login com Google');
     } finally {
       setLoading(false);
     }
@@ -203,8 +195,8 @@ abstract class _AutenticacaoControllerBase with Store {
       setLoading(true);
       clearError();
 
-      // Validar email antes de enviar
-      String? emailError = validateEmail(email);
+      // Para recuperação de senha: validação básica do email
+      String? emailError = validateEmailBasic(email);
       if (emailError != null) {
         setError(emailError);
         return;
@@ -213,7 +205,7 @@ abstract class _AutenticacaoControllerBase with Store {
       await _authService.resetPassword(email);
       setError('Email de recuperação enviado com sucesso!');
     } catch (e) {
-      setError(_getErrorMessage(e.toString()));
+      setError('Erro ao enviar email de recuperação');
     } finally {
       setLoading(false);
     }
@@ -227,7 +219,7 @@ abstract class _AutenticacaoControllerBase with Store {
     } else if (error.contains('email-already-in-use')) {
       return 'Este email já está em uso';
     } else if (error.contains('weak-password')) {
-      return 'A senha é muito fraca';
+      return 'A senha deve conter pelo menos 6 caracteres';
     } else if (error.contains('invalid-email')) {
       return 'Email inválido';
     } else if (error.contains('network-request-failed')) {
