@@ -1,11 +1,12 @@
+import 'dart:io';
+
 import 'package:cuidar_pet_app/app/modules/animal/animal_controller.dart';
+import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:dropdown_button2/dropdown_button2.dart';
-import 'dart:io';
 
 class CadastroAnimalPage extends StatefulWidget {
   const CadastroAnimalPage({super.key});
@@ -27,8 +28,13 @@ class _CadastroAnimalPageState extends State<CadastroAnimalPage> {
     'Pássaro',
     'Roedor',
     'Peixe',
-    'Réptil',
-    'Outro'
+    'Bovino',
+    'Equino',
+    'Suíno',
+    'Ovino',
+    'Galináceos',
+    'Caprinos',
+    'Outros',
   ];
 
   @override
@@ -138,21 +144,21 @@ class _CadastroAnimalPageState extends State<CadastroAnimalPage> {
                         ),
                         child: _imagemSelecionada != null
                             ? ClipOval(
-                          child: Image.file(
-                            _imagemSelecionada!,
-                            fit: BoxFit.cover,
-                          ),
-                        )
+                                child: Image.file(
+                                  _imagemSelecionada!,
+                                  fit: BoxFit.cover,
+                                ),
+                              )
                             : const Icon(
-                          Icons.photo_camera_outlined,
-                          color: Color(0xFF00845A),
-                          size: 50,
-                        ),
+                                Icons.photo_camera_outlined,
+                                color: Color(0xFF00845A),
+                                size: 50,
+                              ),
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
 
                   // Campo de nome
                   _buildLabel('Nome'),
@@ -161,18 +167,20 @@ class _CadastroAnimalPageState extends State<CadastroAnimalPage> {
                     onChanged: (value) => controller.animal.nome = value,
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 8),
 
                   // Campo de tipo do animal
                   _buildLabel('Tipo do animal'),
                   _buildDropdown2(
-                    value: controller.animal.tipoAnimal.isEmpty ? null : controller.animal.tipoAnimal,
+                    value: controller.animal.tipoAnimal.isEmpty
+                        ? null
+                        : controller.animal.tipoAnimal,
                     items: _tiposAnimais,
                     hint: 'Selecione o tipo',
                     onChanged: (value) => controller.animal.tipoAnimal = value!,
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 8),
 
                   // Campo de idade
                   _buildLabel('Idade'),
@@ -185,24 +193,26 @@ class _CadastroAnimalPageState extends State<CadastroAnimalPage> {
                     },
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 8),
 
                   // Campo de gênero
                   _buildLabel('Gênero'),
                   _buildDropdown2(
-                    value: controller.animal.genero.isEmpty ? null : controller.animal.genero,
-                    items: const ['Macho', 'Fêmea'],
+                    value: controller.animal.genero.isEmpty
+                        ? null
+                        : controller.animal.genero,
+                    items: const ['Macho', 'Fêmea', 'Não identificado'],
                     hint: 'Selecione o gênero',
                     onChanged: (value) => controller.animal.genero = value!,
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 8),
 
                   // Campo de peso
                   _buildLabel('Peso do animal'),
                   _buildPesoWidget(),
 
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 16),
 
                   // Botão de salvar
                   SizedBox(
@@ -258,7 +268,9 @@ class _CadastroAnimalPageState extends State<CadastroAnimalPage> {
         borderRadius: BorderRadius.circular(8),
       ),
       child: TextField(
-        controller: TextEditingController(text: value)..selection = TextSelection.fromPosition(TextPosition(offset: value.length)),
+        controller: TextEditingController(text: value)
+          ..selection =
+              TextSelection.fromPosition(TextPosition(offset: value.length)),
         keyboardType: keyboardType,
         onChanged: onChanged,
         decoration: const InputDecoration(
@@ -282,25 +294,27 @@ class _CadastroAnimalPageState extends State<CadastroAnimalPage> {
       isExpanded: true,
       hint: hint != null
           ? Text(
-        hint,
-        style: TextStyle(
-          fontSize: 16,
-          color: Colors.grey[600],
-        ),
-      )
+              hint,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
+            )
           : null,
-      items: items.map((String item) => DropdownMenuItem<String>(
-        value: item,
-        child: Text(
-          item,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w400,
-            color: Colors.black87,
-          ),
-          overflow: TextOverflow.ellipsis,
-        ),
-      )).toList(),
+      items: items
+          .map((String item) => DropdownMenuItem<String>(
+                value: item,
+                child: Text(
+                  item,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black87,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ))
+          .toList(),
       value: value,
       onChanged: onChanged,
       buttonStyleData: ButtonStyleData(
@@ -310,7 +324,8 @@ class _CadastroAnimalPageState extends State<CadastroAnimalPage> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           color: Colors.grey[200],
-          border: Border.all(color: Colors.transparent), // Remove qualquer borda
+          border:
+              Border.all(color: Colors.transparent), // Remove qualquer borda
         ),
         elevation: 0,
       ),
@@ -370,15 +385,17 @@ class _CadastroAnimalPageState extends State<CadastroAnimalPage> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     if (_editandoPeso)
-                    // Campo de texto para edição
+                      // Campo de texto para edição
                       Flexible(
                         child: IntrinsicWidth(
                           child: TextField(
                             controller: _pesoController,
                             focusNode: _pesoFocusNode,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
                             inputFormatters: [
-                              FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,1}')),
+                              FilteringTextInputFormatter.allow(
+                                  RegExp(r'^\d+\.?\d{0,1}')),
                             ],
                             style: const TextStyle(
                               fontSize: 48,
@@ -402,13 +419,13 @@ class _CadastroAnimalPageState extends State<CadastroAnimalPage> {
                         ),
                       )
                     else
-                    // Texto normal para visualização
+                      // Texto normal para visualização
                       Text(
                         controller.animal.peso.toStringAsFixed(1),
                         style: const TextStyle(
                           fontSize: 48,
                           fontWeight: FontWeight.bold,
-                          color: Colors.grey,
+                          color: Color(0xFF00845A),
                         ),
                       ),
                     const SizedBox(width: 8),
@@ -419,7 +436,7 @@ class _CadastroAnimalPageState extends State<CadastroAnimalPage> {
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF4FC3F7),
+                          color: Color(0xFF00845A),
                         ),
                       ),
                     ),
@@ -595,13 +612,33 @@ class WeightRulerPainter extends CustomPainter {
       final isSelected = (i / 20) * maxWeight <= currentWeight;
 
       // Altura variável das barras (similar à imagem)
-      final heights = [60.0, 40.0, 80.0, 35.0, 70.0, 45.0, 85.0, 30.0, 75.0, 50.0,
-        65.0, 40.0, 90.0, 35.0, 55.0, 45.0, 80.0, 40.0, 70.0, 60.0];
+      final heights = [
+        60.0,
+        40.0,
+        80.0,
+        35.0,
+        70.0,
+        45.0,
+        85.0,
+        30.0,
+        75.0,
+        50.0,
+        65.0,
+        40.0,
+        90.0,
+        35.0,
+        55.0,
+        45.0,
+        80.0,
+        40.0,
+        70.0,
+        60.0
+      ];
       final barHeight = heights[i % heights.length];
 
       paint.color = isSelected
-          ? const Color(0xFF4FC3F7) // Azul ciano para barras selecionadas
-          : Colors.grey.shade300;   // Cinza para barras não selecionadas
+          ? const Color(0xFF00845A) // Azul ciano para barras selecionadas
+          : Colors.grey.shade300; // Cinza para barras não selecionadas
 
       canvas.drawRRect(
         RRect.fromRectAndRadius(
@@ -618,7 +655,7 @@ class WeightRulerPainter extends CustomPainter {
 
     // Desenhar linha indicadora (linha vertical destacada)
     final indicatorX = (currentWeight / maxWeight) * size.width;
-    paint.color = const Color(0xFF4FC3F7);
+    paint.color = const Color(0xFF008400);
     paint.strokeWidth = 2;
 
     canvas.drawLine(
