@@ -56,11 +56,78 @@ abstract class _AutenticacaoControllerBase with Store {
     errorMessage = null;
   }
 
+
+  // Validação do email
+  String? validateEmail(String email) {
+    if (email.trim().isEmpty) {
+      return 'Email é obrigatório';
+    }
+
+    // Verificar se começa com letra minúscula
+    if (!RegExp(r'^[a-z]').hasMatch(email)) {
+      return 'Email deve começar com letra minúscula';
+    }
+
+    // Verificar formato do email
+    if (!RegExp(r'^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$').hasMatch(email)) {
+      return 'Formato de email inválido';
+    }
+
+    return null;
+  }
+
+  // Validação da senha
+  String? validatePassword(String password) {
+    if (password.isEmpty) {
+      return 'Senha é obrigatória';
+    }
+
+    if (password.length < 8) {
+      return 'Senha deve ter pelo menos 8 caracteres';
+    }
+
+    // Verificar se contém pelo menos uma letra maiúscula
+    if (!RegExp(r'[A-Z]').hasMatch(password)) {
+      return 'Senha deve conter pelo menos uma letra maiúscula';
+    }
+
+    // Verificar se contém pelo menos uma letra minúscula
+    if (!RegExp(r'[a-z]').hasMatch(password)) {
+      return 'Senha deve conter pelo menos uma letra minúscula';
+    }
+
+    // Verificar se contém pelo menos um número
+    if (!RegExp(r'[0-9]').hasMatch(password)) {
+      return 'Senha deve conter pelo menos um número';
+    }
+
+    // Verificar se contém pelo menos um caractere especial
+    if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password)) {
+      return 'Senha deve conter pelo menos um caractere especial';
+    }
+
+    return null;
+  }
+
   @action
   Future<void> login(String email, String password) async {
     try {
       setLoading(true);
       clearError();
+
+      // Validar email
+      String? emailError = validateEmail(email);
+      if (emailError != null) {
+        setError(emailError);
+        return;
+      }
+
+      // Validar senha
+      String? passwordError = validatePassword(password);
+      if (passwordError != null) {
+        setError(passwordError);
+        return;
+      }
 
       final user = await _authService.signInWithEmailAndPassword(email, password);
 
@@ -80,15 +147,23 @@ abstract class _AutenticacaoControllerBase with Store {
       setLoading(true);
       clearError();
 
-      // Validar se as senhas coincidem
-      if (password != confirmPassword) {
-        setError('As senhas não coincidem');
+      // Validar email
+      String? emailError = validateEmail(email);
+      if (emailError != null) {
+        setError(emailError);
         return;
       }
 
-      // Validar força da senha
-      if (password.length < 6) {
-        setError('A senha deve ter pelo menos 6 caracteres');
+      // Validar senha
+      String? passwordError = validatePassword(password);
+      if (passwordError != null) {
+        setError(passwordError);
+        return;
+      }
+
+      // Validar se as senhas coincidem
+      if (password != confirmPassword) {
+        setError('As senhas não coincidem');
         return;
       }
 
@@ -127,6 +202,13 @@ abstract class _AutenticacaoControllerBase with Store {
     try {
       setLoading(true);
       clearError();
+
+      // Validar email antes de enviar
+      String? emailError = validateEmail(email);
+      if (emailError != null) {
+        setError(emailError);
+        return;
+      }
 
       await _authService.resetPassword(email);
       setError('Email de recuperação enviado com sucesso!');

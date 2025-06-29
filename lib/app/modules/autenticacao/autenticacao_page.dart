@@ -29,6 +29,29 @@ class _AutenticacaoPageState extends State<AutenticacaoPage> {
   }
 
   void _handleSubmit() {
+    // Validar email
+    String? emailError = controller.validateEmail(emailController.text);
+    if (emailError != null) {
+      controller.setError(emailError);
+      return;
+    }
+
+    // Validar senha
+    String? passwordError = controller.validatePassword(passwordController.text);
+    if (passwordError != null) {
+      controller.setError(passwordError);
+      return;
+    }
+
+    // Validar confirmação de senha no cadastro
+    if (!controller.isLogin) {
+      if (passwordController.text != confirmPasswordController.text) {
+        controller.setError('As senhas não coincidem');
+        return;
+      }
+    }
+
+    // Se chegou até aqui, todos os campos são válidos
     if (controller.isLogin) {
       controller.login(
         emailController.text,
@@ -50,6 +73,14 @@ class _AutenticacaoPageState extends State<AutenticacaoPage> {
           position: ToastPosition.bottom);
       return;
     }
+
+    // Validar email antes de enviar
+    String? emailError = controller.validateEmail(emailController.text);
+    if (emailError != null) {
+      controller.setError(emailError);
+      return;
+    }
+
     controller.resetPassword(emailController.text);
   }
 
@@ -79,7 +110,14 @@ class _AutenticacaoPageState extends State<AutenticacaoPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     GestureDetector(
-                      onTap: controller.toggleAuthMode,
+                      onTap: () {
+                        controller.toggleAuthMode();
+                        // Limpar campos ao trocar de modo
+                        nameController.clear();
+                        emailController.clear();
+                        passwordController.clear();
+                        confirmPasswordController.clear();
+                      },
                       child: Container(
                         width: 120,
                         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -101,7 +139,14 @@ class _AutenticacaoPageState extends State<AutenticacaoPage> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: controller.toggleAuthMode,
+                      onTap: () {
+                        controller.toggleAuthMode();
+                        // Limpar campos ao trocar de modo
+                        nameController.clear();
+                        emailController.clear();
+                        passwordController.clear();
+                        confirmPasswordController.clear();
+                      },
                       child: Container(
                         width: 120,
                         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -173,6 +218,13 @@ class _AutenticacaoPageState extends State<AutenticacaoPage> {
                           ),
                           child: TextField(
                             controller: nameController,
+                            textCapitalization: TextCapitalization.words,
+                            onChanged: (value) {
+                              // Limpar erro quando o usuário começar a digitar
+                              if (controller.errorMessage != null) {
+                                controller.clearError();
+                              }
+                            },
                             decoration: const InputDecoration(
                               contentPadding: EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 16),
@@ -186,6 +238,7 @@ class _AutenticacaoPageState extends State<AutenticacaoPage> {
                       const Text('Email',
                           style: TextStyle(
                               fontSize: 14, fontWeight: FontWeight.w500)),
+                      const SizedBox(height: 8),
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.grey[200],
@@ -194,6 +247,12 @@ class _AutenticacaoPageState extends State<AutenticacaoPage> {
                         child: TextField(
                           controller: emailController,
                           keyboardType: TextInputType.emailAddress,
+                          onChanged: (value) {
+                            // Limpar erro quando o usuário começar a digitar
+                            if (controller.errorMessage != null) {
+                              controller.clearError();
+                            }
+                          },
                           decoration: const InputDecoration(
                             contentPadding: EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 16),
@@ -206,6 +265,7 @@ class _AutenticacaoPageState extends State<AutenticacaoPage> {
                       const Text('Senha',
                           style: TextStyle(
                               fontSize: 14, fontWeight: FontWeight.w500)),
+                      const SizedBox(height: 8),
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.grey[200],
@@ -214,6 +274,12 @@ class _AutenticacaoPageState extends State<AutenticacaoPage> {
                         child: TextField(
                           controller: passwordController,
                           obscureText: controller.obscurePassword,
+                          onChanged: (value) {
+                            // Limpar erro quando o usuário começar a digitar
+                            if (controller.errorMessage != null) {
+                              controller.clearError();
+                            }
+                          },
                           decoration: InputDecoration(
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 16),
@@ -244,6 +310,12 @@ class _AutenticacaoPageState extends State<AutenticacaoPage> {
                           child: TextField(
                             controller: confirmPasswordController,
                             obscureText: controller.obscureConfirmPassword,
+                            onChanged: (value) {
+                              // Limpar erro quando o usuário começar a digitar
+                              if (controller.errorMessage != null) {
+                                controller.clearError();
+                              }
+                            },
                             decoration: InputDecoration(
                               contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 16),
