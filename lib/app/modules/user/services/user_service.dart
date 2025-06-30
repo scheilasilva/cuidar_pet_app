@@ -81,6 +81,36 @@ class UserService implements IUserService {
   }
 
   @override
+  Future<void> reauthenticateUser(String currentPassword) async {
+    try {
+      final user = _firebaseAuth.currentUser;
+      if (user == null) throw Exception('Usuário não autenticado');
+
+      // Criar credencial com email e senha atual
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+
+      // Reautenticar o usuário
+      await user.reauthenticateWithCredential(credential);
+    } catch (e) {
+      if (e.toString().contains('wrong-password')) {
+        throw Exception('Senha incorreta');
+      } else if (e.toString().contains('user-mismatch')) {
+        throw Exception('Credenciais não correspondem ao usuário atual');
+      } else if (e.toString().contains('user-not-found')) {
+        throw Exception('Usuário não encontrado');
+      } else if (e.toString().contains('invalid-credential')) {
+        throw Exception('Credenciais inválidas');
+      } else if (e.toString().contains('network-request-failed')) {
+        throw Exception('Erro de conexão. Verifique sua internet');
+      }
+      throw Exception('Erro na reautenticação: $e');
+    }
+  }
+
+  @override
   Future<void> updateFirebaseProfile(UserModel user) async {
     try {
       final firebaseUser = _firebaseAuth.currentUser;

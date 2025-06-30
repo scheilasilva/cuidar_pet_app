@@ -38,6 +38,9 @@ class _BottomSheetPerfilState extends State<BottomSheetPerfil> {
   Future<void> _selecionarImagem() async {
     showModalBottomSheet(
       context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (BuildContext context) {
         return SafeArea(
           child: Wrap(
@@ -81,18 +84,25 @@ class _BottomSheetPerfilState extends State<BottomSheetPerfil> {
         });
       }
     } catch (e) {
-      _showSnackBar('Erro ao selecionar imagem: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao selecionar imagem: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   Widget _buildProfileImage() {
-    if (_imagemSelecionada != null) {
+    if (_imagemSelecionada != null && _imagemSelecionada!.existsSync()) {
       return ClipOval(
         child: Image.file(
           _imagemSelecionada!,
-          width: 140,
-          height: 140,
           fit: BoxFit.cover,
+          width: 80,
+          height: 80,
         ),
       );
     } else if (widget.controller.user.imagem != null &&
@@ -102,72 +112,82 @@ class _BottomSheetPerfilState extends State<BottomSheetPerfil> {
         return ClipOval(
           child: Image.file(
             file,
-            width: 140,
-            height: 140,
             fit: BoxFit.cover,
+            width: 80,
+            height: 80,
           ),
         );
       }
     }
 
     return Container(
-      width: 140,
-      height: 140,
-      decoration: BoxDecoration(
-        color: const Color(0xFF00845A).withOpacity(0.3),
+      width: 80,
+      height: 80,
+      decoration: const BoxDecoration(
+        color: Colors.white,
         shape: BoxShape.circle,
-        border: Border.all(
-          color: const Color(0xFF00845A),
-          width: 2,
-        ),
       ),
       child: const Icon(
-        Icons.photo_camera_outlined,
+        Icons.person,
         color: Color(0xFF00845A),
-        size: 50,
+        size: 100,
       ),
     );
   }
 
   Future<void> _salvarPerfil() async {
-    // Validar campos
-    if (_nomeController.text.isEmpty || _emailController.text.isEmpty) {
-      _showSnackBar('Preencha todos os campos');
-      return;
+    try {
+      // Validar campos
+      if (_nomeController.text.isEmpty || _emailController.text.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Preencha todos os campos'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Atualizar dados locais
+      widget.controller.user.nome = _nomeController.text;
+      widget.controller.user.email = _emailController.text;
+
+      // Salvar
+      if (_imagemSelecionada != null) {
+        await widget.controller.atualizarPerfilComImagem(_imagemSelecionada!.path);
+      } else {
+        await widget.controller.salvarPerfil();
+      }
+
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Perfil atualizado com sucesso!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao salvar: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
-
-    // Atualizar dados locais
-    widget.controller.user.nome = _nomeController.text;
-    widget.controller.user.email = _emailController.text;
-
-    // Salvar
-    if (_imagemSelecionada != null) {
-      await widget.controller.atualizarPerfilComImagem(_imagemSelecionada!.path);
-    } else {
-      await widget.controller.salvarPerfil();
-    }
-
-    if (widget.controller.errorMessage == null) {
-      _showSnackBar('Perfil salvo com sucesso!');
-      Navigator.pop(context);
-    }
-  }
-
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: const Color(0xFF00845A),
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
-      initialChildSize: 0.7,
+      initialChildSize: 0.57,
       minChildSize: 0.5,
-      maxChildSize: 0.9,
+      maxChildSize: 0.95,
       expand: false,
       builder: (context, scrollController) {
         return Container(
@@ -195,36 +215,47 @@ class _BottomSheetPerfilState extends State<BottomSheetPerfil> {
               Expanded(
                 child: SingleChildScrollView(
                   controller: scrollController,
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(20.0),
                   child: Observer(
                     builder: (_) => Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Título
-                        const Center(
-                          child: Text(
-                            'Editar perfil',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        const Text(
+                          'Editar Perfil',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 20),
 
-                        // Foto de perfil
+                        const SizedBox(height: 8),
+
+                        // Foto do perfil
                         Center(
                           child: GestureDetector(
                             onTap: _selecionarImagem,
-                            child: _buildProfileImage(),
+                            child: Container(
+                              width: 180,
+                              height: 180,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: const Color(0xFF00845A),
+                                  width: 2,
+                                ),
+                              ),
+                              child: _buildProfileImage(),
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 24),
+
+                        const SizedBox(height: 8),
 
                         // Mostrar erro se houver
                         if (widget.controller.errorMessage != null)
                           Container(
-                            margin: const EdgeInsets.only(bottom: 16),
+                            margin: const EdgeInsets.only(bottom: 8),
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: Colors.red.shade100,
@@ -243,9 +274,9 @@ class _BottomSheetPerfilState extends State<BottomSheetPerfil> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
+                            color: Colors.black87,
                           ),
                         ),
-                        const SizedBox(height: 8),
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.grey[200],
@@ -256,13 +287,14 @@ class _BottomSheetPerfilState extends State<BottomSheetPerfil> {
                             decoration: const InputDecoration(
                               contentPadding: EdgeInsets.symmetric(
                                 horizontal: 16,
-                                vertical: 16,
+                                vertical: 12,
                               ),
                               border: InputBorder.none,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
+
+                        const SizedBox(height: 8),
 
                         // Campo E-mail
                         const Text(
@@ -270,9 +302,9 @@ class _BottomSheetPerfilState extends State<BottomSheetPerfil> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
+                            color: Colors.black87,
                           ),
                         ),
-                        const SizedBox(height: 8),
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.grey[200],
@@ -284,13 +316,14 @@ class _BottomSheetPerfilState extends State<BottomSheetPerfil> {
                             decoration: const InputDecoration(
                               contentPadding: EdgeInsets.symmetric(
                                 horizontal: 16,
-                                vertical: 16,
+                                vertical: 12,
                               ),
                               border: InputBorder.none,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 24),
+
+                        const SizedBox(height: 16),
 
                         // Botão Salvar
                         SizedBox(
@@ -318,7 +351,7 @@ class _BottomSheetPerfilState extends State<BottomSheetPerfil> {
                               'Salvar',
                               style: TextStyle(
                                 fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ),

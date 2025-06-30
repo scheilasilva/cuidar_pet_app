@@ -9,4 +9,5 @@ abstract class IUserService {
   Future<void> updateFirebaseProfile(UserModel user);
   Future<void> delete(UserModel user);
   Future<String?> saveImageLocally(String imagePath);
+  Future<void> reauthenticateUser(String currentPassword);
 }

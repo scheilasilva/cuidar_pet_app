@@ -93,26 +93,26 @@ class _EditarPetBottomSheetState extends State<EditarPetBottomSheet> {
       isExpanded: true,
       hint: hint != null
           ? Text(
-              hint,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
-            )
+        hint,
+        style: TextStyle(
+          fontSize: 16,
+          color: Colors.grey[600],
+        ),
+      )
           : null,
       items: items
           .map((String item) => DropdownMenuItem<String>(
-                value: item,
-                child: Text(
-                  item,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.black87,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ))
+        value: item,
+        child: Text(
+          item,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+            color: Colors.black87,
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ))
           .toList(),
       value: value,
       onChanged: onChanged,
@@ -186,13 +186,13 @@ class _EditarPetBottomSheetState extends State<EditarPetBottomSheet> {
               width: 80,
               height: 80,
               decoration: const BoxDecoration(
-                color: Colors.grey,
+                color: Colors.white,
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.pets,
                 color: Color(0xFF00845A),
-                size: 30,
+                size: 50,
               ),
             );
           },
@@ -203,13 +203,13 @@ class _EditarPetBottomSheetState extends State<EditarPetBottomSheet> {
         width: 80,
         height: 80,
         decoration: const BoxDecoration(
-          color: Colors.grey,
+          color: Colors.white,
           shape: BoxShape.circle,
         ),
         child: const Icon(
           Icons.pets,
           color: Color(0xFF00845A),
-          size: 30,
+          size: 100,
         ),
       );
     }
@@ -319,7 +319,7 @@ class _EditarPetBottomSheetState extends State<EditarPetBottomSheet> {
         return AlertDialog(
           title: const Text('Confirmar exclusão'),
           content:
-              Text('Tem certeza que deseja excluir ${_animalEditando.nome}?'),
+          Text('Tem certeza que deseja excluir ${_animalEditando.nome}?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -518,7 +518,7 @@ class _EditarPetBottomSheetState extends State<EditarPetBottomSheet> {
                         ),
                         child: TextField(
                           controller:
-                              TextEditingController(text: _idade.toString()),
+                          TextEditingController(text: _idade.toString()),
                           keyboardType: TextInputType.number,
                           onChanged: (value) {
                             _idade = int.tryParse(value) ?? 0;

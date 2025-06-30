@@ -81,44 +81,181 @@ class _PerfilPageState extends State<PerfilPage> {
     }
   }
 
+  Future<void> _deactivateAccount(String password) async {
+    try {
+      // Criar uma instância isolada do controller para evitar conflitos
+      final tempController = Modular.get<PerfilController>();
+      await tempController.excluirContaComSenha(password);
+
+      if (tempController.errorMessage == null) {
+        return; // Sucesso
+      } else {
+        throw Exception(tempController.errorMessage!);
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   void _showDeactivateDialog() {
+    final TextEditingController passwordController = TextEditingController();
+    bool obscurePassword = true;
+    bool isLoading = false;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Desativar conta'),
-        content: const Text(
-          'Tem certeza que deseja desativar sua conta? Esta ação não pode ser desfeita.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await controller.excluirConta();
-              if (controller.errorMessage == null) {
-                Modular.to.navigate('/autenticacao/');
-              }
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Desativar conta'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Para desativar sua conta, confirme sua senha atual:',
+                  style: TextStyle(fontSize: 14),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Senha atual',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: TextField(
+                    controller: passwordController,
+                    obscureText: obscurePassword,
+                    enabled: !isLoading,
+                    decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      border: InputBorder.none,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: Colors.grey,
+                        ),
+                        onPressed: isLoading ? null : () {
+                          setState(() {
+                            obscurePassword = !obscurePassword;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Esta ação não pode ser desfeita.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.red,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
-            child: const Text('Desativar'),
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: isLoading ? null : () {
+                passwordController.dispose();
+                Navigator.of(dialogContext).pop();
+              },
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: isLoading ? null : () async {
+                final password = passwordController.text.trim();
+
+                if (password.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Digite sua senha atual'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                setState(() {
+                  isLoading = true;
+                });
+
+                try {
+                  // Executar a exclusão
+                  await _deactivateAccount(password);
+
+                  // Fechar o diálogo imediatamente
+                  passwordController.dispose();
+                  Navigator.of(dialogContext).pop();
+
+                  // Aguardar um pouco para o framework limpar
+                  await Future.delayed(const Duration(milliseconds: 100));
+
+                  // Navegar para tela de autenticação
+                  if (mounted) {
+                    Modular.to.pushReplacementNamed('/autenticacao/');
+                  }
+
+                } catch (e) {
+                  setState(() {
+                    isLoading = false;
+                  });
+
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(e.toString().replaceAll('Exception: ', '')),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
+              child: isLoading
+                  ? const SizedBox(
+                height: 16,
+                width: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.red,
+                ),
+              )
+                  : const Text('Desativar'),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: const Color(0xFF00845A),
-      ),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: const Color(0xFF00845A),
+        ),
+      );
+    }
   }
 
   Widget _buildProfileImage() {

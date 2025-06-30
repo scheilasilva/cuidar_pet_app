@@ -147,7 +147,34 @@ abstract class _PerfilControllerBase with Store {
     }
   }
 
-  // Excluir conta
+  // Excluir conta com reautenticação
+  @action
+  Future<void> excluirContaComSenha(String senhaAtual) async {
+    try {
+      setLoading(true);
+      clearError();
+
+      // Validar senha atual
+      String? passwordError = validatePasswordBasic(senhaAtual);
+      if (passwordError != null) {
+        setError(passwordError);
+        return;
+      }
+
+      // Primeiro reautentica com a senha atual
+      await _service.reauthenticateUser(senhaAtual);
+
+      // Depois exclui a conta
+      await _service.delete(user.toModel());
+      user = UserStoreFactory.novo();
+    } catch (e) {
+      setError(_getErrorMessage(e.toString()));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Excluir conta (método antigo - mantido para compatibilidade)
   @action
   Future<void> excluirConta() async {
     try {
@@ -157,7 +184,7 @@ abstract class _PerfilControllerBase with Store {
       await _service.delete(user.toModel());
       user = UserStoreFactory.novo();
     } catch (e) {
-      setError('Erro ao excluir conta: $e');
+      setError(_getErrorMessage(e.toString()));
     } finally {
       setLoading(false);
     }
@@ -169,6 +196,7 @@ abstract class _PerfilControllerBase with Store {
     user = UserStoreFactory.novo();
   }
 
+  // Método para tratar mensagens de erro (igual ao autenticacao_controller)
   String _getErrorMessage(String error) {
     if (error.contains('user-not-found')) {
       return 'Usuário não encontrado';
@@ -182,6 +210,8 @@ abstract class _PerfilControllerBase with Store {
       return 'Email inválido';
     } else if (error.contains('network-request-failed')) {
       return 'Erro de conexão. Verifique sua internet';
+    } else if (error.contains('requires-recent-login')) {
+      return 'Por segurança, confirme sua senha atual para continuar';
     } else {
       return 'Erro inesperado. Tente novamente';
     }
