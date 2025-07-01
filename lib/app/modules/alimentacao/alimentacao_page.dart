@@ -164,13 +164,19 @@ class _AlimentacaoPageState extends State<AlimentacaoPage> {
                           ),
                         ],
                       ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.add_circle_outline_sharp,
-                          size: 80,
+                      Container(
+                        decoration: const BoxDecoration(
                           color: Colors.white,
+                          shape: BoxShape.circle,
                         ),
-                        onPressed: _showCadastroAlimentacao,
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.add,
+                            size: 32,
+                            color: Color(0xFF00845A),
+                          ),
+                          onPressed: _showCadastroAlimentacao,
+                        ),
                       ),
                     ],
                   ),

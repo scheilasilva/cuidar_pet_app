@@ -19,145 +19,136 @@ class TratamentoCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(16),
+        height: 100,
         decoration: BoxDecoration(
-          color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withOpacity(0.5),
               blurRadius: 4,
-              offset: const Offset(0, 2),
+              offset: const Offset(0, 3),
             ),
           ],
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Checkbox para marcar como concluído
-            Checkbox(
-              value: tratamento.concluido,
-              onChanged: onCheckboxChanged,
-              activeColor: const Color(0xFF00845A),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-
-            const SizedBox(width: 12),
-
-            // Ícone do tratamento
+            // Seção verde com ícone apenas
             Container(
-              width: 48,
-              height: 48,
+              width: 120,
               decoration: BoxDecoration(
                 color: tratamento.concluido
                     ? Colors.grey[400]
                     : const Color(0xFF00845A),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  bottomLeft: Radius.circular(12),
+                ),
               ),
-              child: Icon(
-                Icons.medical_services,
-                color: Colors.white,
-                size: 24,
+              child: const Center(
+                child: Icon(
+                  Icons.medical_services,
+                  color: Colors.white,
+                  size: 70,
+                ),
               ),
             ),
 
-            const SizedBox(width: 16),
-
-            // Informações do tratamento
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Título e data na mesma linha
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          tratamento.titulo,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: tratamento.concluido
-                                ? Colors.grey[600]
-                                : Colors.black87,
-                            decoration: tratamento.concluido
-                                ? TextDecoration.lineThrough
-                                : null,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Row(
-                        children: [
-                          Text(
-                            tratamento.dataInicio,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topRight: Radius.circular(12),
+                    bottomRight: Radius.circular(12),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Título e data na mesma linha (igual ao ExameCard)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            tratamento.titulo,
                             style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: tratamento.concluido
+                                  ? Colors.grey[600]
+                                  : Colors.black87,
+                              decoration: tratamento.concluido
+                                  ? TextDecoration.lineThrough
+                                  : null,
                             ),
                           ),
-                          const SizedBox(width: 4),
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: tratamento.concluido
-                                  ? Colors.grey[400]
-                                  : const Color(0xFF00845A),
-                              shape: BoxShape.circle,
+                        ),
+                        Row(
+                          children: [
+                            Text(
+                              tratamento.dataInicio,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: tratamento.concluido
+                                    ? Colors.grey[400]
+                                    : const Color(0xFF00845A),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 3),
+
+                    // Descrição e checkbox
+                    Expanded(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              tratamento.descricao,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: tratamento.concluido
+                                    ? Colors.grey[500]
+                                    : Colors.grey[700],
+                                height: 1.4,
+                                decoration: tratamento.concluido
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                              ),
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Transform.scale(
+                            scale: 0.7,
+                            child: Checkbox(
+                              value: tratamento.concluido,
+                              onChanged: onCheckboxChanged,
+                              activeColor: const Color(0xFF00845A),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(4),
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // Tipo de tratamento
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: tratamento.concluido
-                          ? Colors.grey[200]
-                          : const Color(0xFF00845A).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(
-                      tratamento.tipo,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: tratamento.concluido
-                            ? Colors.grey[600]
-                            : const Color(0xFF00845A),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // Descrição
-                  Text(
-                    tratamento.descricao,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: tratamento.concluido
-                          ? Colors.grey[500]
-                          : Colors.grey[700],
-                      height: 1.4,
-                      decoration: tratamento.concluido
-                          ? TextDecoration.lineThrough
-                          : null,
-                    ),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],

@@ -17,66 +17,65 @@ class VacinacaoCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
+        height: 100,
         decoration: BoxDecoration(
-          color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withOpacity(0.5),
               blurRadius: 4,
-              offset: const Offset(0, 2),
+              offset: const Offset(0, 3),
             ),
           ],
         ),
         child: Row(
           children: [
-            // Ícone de seringa
+            // Seção verde com ícone
             Container(
-              width: 60,
-              height: 80,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.vaccines,
-                    color: const Color(0xFF00845A),
-                    size: 28,
-                  ),
-                  SizedBox(height: 4),
-                  Icon(
-                    Icons.medication_liquid,
-                    color: const Color(0xFF00845A),
-                    size: 28,
-                  ),
-                ],
+              width: 120,
+              decoration: const BoxDecoration(
+                color: Color(0xFF00845A),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  bottomLeft: Radius.circular(12),
+                ),
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.vaccines,
+                  color: Colors.white,
+                  size: 70,
+                ),
               ),
             ),
 
-            // Conteúdo principal
+            // Seção branca com conteúdo
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topRight: Radius.circular(12),
+                    bottomRight: Radius.circular(12),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Título da vacina
-                    Expanded(
-                      child: Text(
-                        vacinacao.titulo,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ),
-
-                    // Data e status
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                    // Título e data na mesma linha
+                    Row(
                       children: [
-                        // Data
+                        Expanded(
+                          child: Text(
+                            vacinacao.titulo,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
                         Row(
                           children: [
                             Text(
@@ -90,31 +89,53 @@ class VacinacaoCard extends StatelessWidget {
                             Container(
                               width: 8,
                               height: 8,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF00845A),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF00845A),
                                 shape: BoxShape.circle,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        // Tag de status
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: _getStatusColor(vacinacao.status),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            vacinacao.status,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white,
+                      ],
+                    ),
+
+                    const SizedBox(height: 3),
+
+                    // Descrição e tag de status
+                    Expanded(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              vacinacao.descricao,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[700],
+                                height: 1.4,
+                              ),
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                        ),
-                      ],
+                          // Tag de status à direita
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: _getStatusColor(vacinacao.status),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              vacinacao.status,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

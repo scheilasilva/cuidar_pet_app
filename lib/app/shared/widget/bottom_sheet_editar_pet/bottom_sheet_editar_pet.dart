@@ -537,7 +537,7 @@ class _EditarPetBottomSheetState extends State<EditarPetBottomSheet> {
 
                       // Campo Peso
                       const Text(
-                        'Peso (kg)',
+                        'Peso',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,

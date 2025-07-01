@@ -5,7 +5,7 @@ class CategoriaHelper {
     'saude': {
       'nome': 'Saúde',
       'cor': Color(0xFFFF6B6B), // Vermelho
-      'icone': Icons.medical_services,
+      'icone': Icons.medication_liquid_sharp,
     },
     'alimentacao': {
       'nome': 'Alimentação',
@@ -15,12 +15,12 @@ class CategoriaHelper {
     'exercicio': {
       'nome': 'Exercício',
       'cor': Color(0xFFF1C40F), // Amarelo
-      'icone': Icons.fitness_center,
+      'icone': Icons.medical_services_rounded,
     },
     'cuidados': {
       'nome': 'Cuidados',
       'cor': Color(0xFFE91E63), // Rosa
-      'icone': Icons.pets,
+      'icone': Icons.local_pharmacy_outlined,
     },
   };
 

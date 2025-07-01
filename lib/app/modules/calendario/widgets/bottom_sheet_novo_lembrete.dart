@@ -4,7 +4,8 @@ import 'package:intl/intl.dart';
 
 class BottomSheetNovoLembrete extends StatefulWidget {
   final DateTime dataSelecionada;
-  final Function(String titulo, String descricao, DateTime data, String categoria, bool concluido)? onSalvar;
+  final Function(String titulo, String descricao, DateTime data,
+      String categoria, bool concluido)? onSalvar;
 
   const BottomSheetNovoLembrete({
     super.key,
@@ -13,7 +14,8 @@ class BottomSheetNovoLembrete extends StatefulWidget {
   });
 
   @override
-  State<BottomSheetNovoLembrete> createState() => _BottomSheetNovoLembreteState();
+  State<BottomSheetNovoLembrete> createState() =>
+      _BottomSheetNovoLembreteState();
 }
 
 class _BottomSheetNovoLembreteState extends State<BottomSheetNovoLembrete> {
@@ -76,6 +78,9 @@ class _BottomSheetNovoLembreteState extends State<BottomSheetNovoLembrete> {
   @override
   Widget build(BuildContext context) {
     return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.9,
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
@@ -100,7 +105,12 @@ class _BottomSheetNovoLembreteState extends State<BottomSheetNovoLembrete> {
           // Conteúdo
           Flexible(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 24,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -119,7 +129,8 @@ class _BottomSheetNovoLembreteState extends State<BottomSheetNovoLembrete> {
                       GestureDetector(
                         onTap: _selecionarData,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
                             color: const Color(0xFF00845A),
                             borderRadius: BorderRadius.circular(8),
@@ -136,7 +147,7 @@ class _BottomSheetNovoLembreteState extends State<BottomSheetNovoLembrete> {
                     ],
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
 
                   // Campo Título do lembrete
                   const Text(
@@ -147,12 +158,10 @@ class _BottomSheetNovoLembreteState extends State<BottomSheetNovoLembrete> {
                       color: Colors.black87,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   TextField(
                     controller: _tituloController,
                     decoration: InputDecoration(
-                      hintText: 'Título do lembrete',
-                      hintStyle: TextStyle(color: Colors.grey[400]),
                       filled: true,
                       fillColor: Colors.grey[100],
                       border: OutlineInputBorder(
@@ -165,22 +174,6 @@ class _BottomSheetNovoLembreteState extends State<BottomSheetNovoLembrete> {
                       ),
                     ),
                     onChanged: (_) => setState(() {}),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Contador de caracteres
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Text(
-                        '${_tituloController.text.length}/15',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
                   ),
 
                   const SizedBox(height: 16),
@@ -194,38 +187,45 @@ class _BottomSheetNovoLembreteState extends State<BottomSheetNovoLembrete> {
                       color: Colors.black87,
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: CategoriaHelper.getTodasCategorias().map((categoria) {
-                      final isSelected = _categoriaSelecionada == categoria;
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _categoriaSelecionada = categoria;
-                          });
-                        },
-                        child: Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            color: CategoriaHelper.getCorCategoria(categoria),
-                            shape: BoxShape.circle,
-                            border: isSelected
-                                ? Border.all(color: Colors.black, width: 3)
-                                : null,
+                  const SizedBox(height: 8),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children:
+                          CategoriaHelper.getTodasCategorias().map((categoria) {
+                        final isSelected = _categoriaSelecionada == categoria;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 12),
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _categoriaSelecionada = categoria;
+                              });
+                            },
+                            child: Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color:
+                                    CategoriaHelper.getCorCategoria(categoria),
+                                shape: BoxShape.circle,
+                                border: isSelected
+                                    ? Border.all(color: Colors.black, width: 3)
+                                    : null,
+                              ),
+                              child: Icon(
+                                CategoriaHelper.getIconeCategoria(categoria),
+                                color: Colors.white,
+                                size: 28,
+                              ),
+                            ),
                           ),
-                          child: Icon(
-                            CategoriaHelper.getIconeCategoria(categoria),
-                            color: Colors.white,
-                            size: 28,
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                        );
+                      }).toList(),
+                    ),
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
 
                   // Campo Descrição do lembrete
                   const Text(
@@ -236,13 +236,11 @@ class _BottomSheetNovoLembreteState extends State<BottomSheetNovoLembrete> {
                       color: Colors.black87,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   TextField(
                     controller: _descricaoController,
-                    maxLines: 6,
+                    maxLines: 4,
                     decoration: InputDecoration(
-                      hintText: 'Descrição',
-                      hintStyle: TextStyle(color: Colors.grey[400]),
                       filled: true,
                       fillColor: Colors.grey[100],
                       border: OutlineInputBorder(
@@ -256,24 +254,6 @@ class _BottomSheetNovoLembreteState extends State<BottomSheetNovoLembrete> {
                     ),
                     onChanged: (_) => setState(() {}),
                   ),
-
-                  const SizedBox(height: 16),
-
-                  // Contador de caracteres para descrição
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Text(
-                        '${_descricaoController.text.length}/20',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
 
                   // Checkbox Concluído
                   Row(
@@ -298,8 +278,6 @@ class _BottomSheetNovoLembreteState extends State<BottomSheetNovoLembrete> {
                       ),
                     ],
                   ),
-
-                  const SizedBox(height: 32),
 
                   // Botão Salvar
                   SizedBox(
