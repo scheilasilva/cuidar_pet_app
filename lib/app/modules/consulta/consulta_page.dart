@@ -83,8 +83,8 @@ class _ConsultaPageState extends State<ConsultaPage> {
             labelCampo1: 'Título da consulta',
             labelCampo2: 'Descrição da consulta',
             labelCampo3: 'Data da consulta',
-            onSalvar: (titulo, descricao, data, tipo, imagem) async {
-              await controller.criarConsulta(titulo, descricao, data, tipo, imagem);
+            onSalvar: (titulo, descricao, data, imagem) async {
+              await controller.criarConsulta(titulo, descricao, data, imagem!);
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(

@@ -125,10 +125,10 @@ mixin _$TratamentoController on _TratamentoControllerBase, Store {
       context: context);
 
   @override
-  Future<void> criarTratamento(String titulo, String descricao, String data,
-      String tipo, String? imagem) {
-    return _$criarTratamentoAsyncAction.run(
-        () => super.criarTratamento(titulo, descricao, data, tipo, imagem));
+  Future<void> criarTratamento(
+      String titulo, String descricao, String data, String? imagem) {
+    return _$criarTratamentoAsyncAction
+        .run(() => super.criarTratamento(titulo, descricao, data, imagem));
   }
 
   late final _$toggleTratamentoConcluidoAsyncAction = AsyncAction(

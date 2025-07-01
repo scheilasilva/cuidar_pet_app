@@ -29,7 +29,6 @@ abstract class _ExameControllerBase with Store {
     return e.titulo.isNotEmpty &&
         e.descricao.isNotEmpty &&
         e.dataRealizacao.isNotEmpty &&
-        e.tipo.isNotEmpty &&
         e.animalId.isNotEmpty;
   }
 
@@ -70,14 +69,13 @@ abstract class _ExameControllerBase with Store {
 
   // NOVO: Criar novo exame com imagem
   @action
-  Future<void> criarExameComImagem(String titulo, String descricao, String data, String tipo, String imagePath) async {
+  Future<void> criarExameComImagem(String titulo, String descricao, String data, String imagePath) async {
     if (animalSelecionadoId == null) return;
 
     final novoExame = ExameStoreFactory.novo(animalSelecionadoId!);
     novoExame.titulo = titulo;
     novoExame.descricao = descricao;
     novoExame.dataRealizacao = data;
-    novoExame.tipo = tipo;
 
     await _service.saveOrUpdateWithImage(novoExame.toModel(), imagePath);
     await loadExamesByAnimal(animalSelecionadoId!);
@@ -85,14 +83,13 @@ abstract class _ExameControllerBase with Store {
 
   // Criar novo exame sem imagem (mantém compatibilidade)
   @action
-  Future<void> criarExame(String titulo, String descricao, String data, String tipo, String? imagem) async {
+  Future<void> criarExame(String titulo, String descricao, String data, String? imagem) async {
     if (animalSelecionadoId == null) return;
 
     final novoExame = ExameStoreFactory.novo(animalSelecionadoId!);
     novoExame.titulo = titulo;
     novoExame.descricao = descricao;
     novoExame.dataRealizacao = data;
-    novoExame.tipo = tipo;
     novoExame.imagem = imagem;
 
     if (imagem != null && imagem.isNotEmpty) {

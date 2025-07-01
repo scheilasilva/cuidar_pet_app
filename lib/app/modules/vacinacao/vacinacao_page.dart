@@ -96,8 +96,8 @@ class _VacinacaoPageState extends State<VacinacaoPage> {
             labelCampo1: 'Nome da vacina',
             labelCampo2: 'Descrição da vacinação',
             labelCampo3: 'Data programada (dd/mm/aaaa)',
-            onSalvar: (titulo, descricao, data, tipo, imagem) async {
-              await controller.criarVacinacao(titulo, descricao, data, tipo, imagem);
+            onSalvar: (titulo, descricao, data, imagem) async {
+              await controller.criarVacinacao(titulo, descricao, data, imagem!);
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(

@@ -103,10 +103,10 @@ mixin _$VacinacaoController on _VacinacaoControllerBase, Store {
       AsyncAction('_VacinacaoControllerBase.criarVacinacao', context: context);
 
   @override
-  Future<void> criarVacinacao(String titulo, String descricao, String data,
-      String tipo, String? imagem) {
+  Future<void> criarVacinacao(
+      String titulo, String descricao, String data, String? imagem) {
     return _$criarVacinacaoAsyncAction
-        .run(() => super.criarVacinacao(titulo, descricao, data, tipo, imagem));
+        .run(() => super.criarVacinacao(titulo, descricao, data, imagem));
   }
 
   late final _$marcarComoConcluidaAsyncAction = AsyncAction(

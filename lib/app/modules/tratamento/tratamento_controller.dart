@@ -32,7 +32,6 @@ abstract class _TratamentoControllerBase with Store {
     return t.titulo.isNotEmpty &&
         t.descricao.isNotEmpty &&
         t.dataInicio.isNotEmpty &&
-        t.tipo.isNotEmpty &&
         t.animalId.isNotEmpty;
   }
 
@@ -81,14 +80,13 @@ abstract class _TratamentoControllerBase with Store {
 
   // Criar novo tratamento
   @action
-  Future<void> criarTratamento(String titulo, String descricao, String data, String tipo, String? imagem) async {
+  Future<void> criarTratamento(String titulo, String descricao, String data, String? imagem) async {
     if (animalSelecionadoId == null) return;
 
     final novoTratamento = TratamentoStoreFactory.novo(animalSelecionadoId!);
     novoTratamento.titulo = titulo;
     novoTratamento.descricao = descricao;
     novoTratamento.dataInicio = data;
-    novoTratamento.tipo = tipo;
     novoTratamento.imagem = imagem;
 
     if (imagem != null && imagem.isNotEmpty) {

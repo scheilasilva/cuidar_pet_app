@@ -101,6 +101,16 @@ mixin _$PerfilController on _PerfilControllerBase, Store {
         .run(() => super.alterarSenha(senhaAtual, novaSenha, confirmaSenha));
   }
 
+  late final _$excluirContaComSenhaAsyncAction = AsyncAction(
+      '_PerfilControllerBase.excluirContaComSenha',
+      context: context);
+
+  @override
+  Future<void> excluirContaComSenha(String senhaAtual) {
+    return _$excluirContaComSenhaAsyncAction
+        .run(() => super.excluirContaComSenha(senhaAtual));
+  }
+
   late final _$excluirContaAsyncAction =
       AsyncAction('_PerfilControllerBase.excluirConta', context: context);
 
@@ -111,6 +121,28 @@ mixin _$PerfilController on _PerfilControllerBase, Store {
 
   late final _$_PerfilControllerBaseActionController =
       ActionController(name: '_PerfilControllerBase', context: context);
+
+  @override
+  void setLoading(bool loading) {
+    final _$actionInfo = _$_PerfilControllerBaseActionController.startAction(
+        name: '_PerfilControllerBase.setLoading');
+    try {
+      return super.setLoading(loading);
+    } finally {
+      _$_PerfilControllerBaseActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
+  void setError(String? error) {
+    final _$actionInfo = _$_PerfilControllerBaseActionController.startAction(
+        name: '_PerfilControllerBase.setError');
+    try {
+      return super.setError(error);
+    } finally {
+      _$_PerfilControllerBaseActionController.endAction(_$actionInfo);
+    }
+  }
 
   @override
   void clearError() {

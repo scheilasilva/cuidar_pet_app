@@ -99,8 +99,8 @@ class _TratamentoPageState extends State<TratamentoPage> {
             labelCampo1: 'Título do tratamento',
             labelCampo2: 'Descrição do tratamento',
             labelCampo3: 'Data de início do tratamento',
-            onSalvar: (titulo, descricao, data, tipo, imagem) async {
-              await controller.criarTratamento(titulo, descricao, data, tipo, imagem);
+            onSalvar: (titulo, descricao, data, imagem) async {
+              await controller.criarTratamento(titulo, descricao, data, imagem);
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(

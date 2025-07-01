@@ -30,7 +30,6 @@ abstract class _VacinacaoControllerBase with Store {
     return v.titulo.isNotEmpty &&
         v.descricao.isNotEmpty &&
         v.dataVacinacao.isNotEmpty &&
-        v.tipo.isNotEmpty &&
         v.animalId.isNotEmpty;
   }
 
@@ -71,14 +70,13 @@ abstract class _VacinacaoControllerBase with Store {
 
   // Criar nova vacinação
   @action
-  Future<void> criarVacinacao(String titulo, String descricao, String data, String tipo, String? imagem) async {
+  Future<void> criarVacinacao(String titulo, String descricao, String data, String? imagem) async {
     if (animalSelecionadoId == null) return;
 
     final novaVacinacao = VacinacaoStoreFactory.novo(animalSelecionadoId!);
     novaVacinacao.titulo = titulo;
     novaVacinacao.descricao = descricao;
     novaVacinacao.dataVacinacao = data;
-    novaVacinacao.tipo = tipo;
     novaVacinacao.imagem = imagem;
 
     if (imagem != null && imagem.isNotEmpty) {

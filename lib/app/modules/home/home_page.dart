@@ -207,6 +207,7 @@ class _HomePageState extends State<HomePage> {
                       carouselController: _carouselController,
                       options: CarouselOptions(
                         height: 220,
+                        viewportFraction: 0.92,
                         enlargeCenterPage: true,
                         initialPage: controller.carrosselIndex,
                         enableInfiniteScroll: false,

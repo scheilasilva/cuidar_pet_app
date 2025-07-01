@@ -112,23 +112,12 @@ class ExameDetalhesBottomSheet extends StatelessWidget {
 
                       const SizedBox(height: 16),
 
-                      // Tipo de exame
-                      Text(
-                        'Tipo de exame: ${exame.tipo}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF00845A),
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      // Data
+                      // Data (removido o tipo de exame)
                       Text(
                         'Data: ${exame.dataRealizacao}',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
                           color: Colors.grey[600],
                         ),
                       ),

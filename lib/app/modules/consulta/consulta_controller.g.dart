@@ -103,10 +103,10 @@ mixin _$ConsultaController on _ConsultaControllerBase, Store {
       AsyncAction('_ConsultaControllerBase.criarConsulta', context: context);
 
   @override
-  Future<void> criarConsulta(String titulo, String descricao, String data,
-      String tipo, String? imagem) {
+  Future<void> criarConsulta(
+      String titulo, String descricao, String data, String? imagem) {
     return _$criarConsultaAsyncAction
-        .run(() => super.criarConsulta(titulo, descricao, data, tipo, imagem));
+        .run(() => super.criarConsulta(titulo, descricao, data, imagem));
   }
 
   late final _$excluirConsultaAsyncAction =

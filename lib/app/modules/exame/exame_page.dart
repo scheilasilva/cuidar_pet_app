@@ -28,32 +28,35 @@ class _ExamePageState extends State<ExamePage> {
   void _initializeWithSelectedAnimal() {
     // Usar o animal selecionado do carrossel
     if (animalController.animalSelecionadoCarrossel != null) {
-      controller.setAnimalSelecionado(animalController.animalSelecionadoCarrossel!.id);
+      controller.setAnimalSelecionado(
+          animalController.animalSelecionadoCarrossel!.id);
     } else if (animalController.animais.isNotEmpty) {
       // Fallback: definir o primeiro animal como selecionado
       animalController.setAnimalSelecionadoCarrossel(0);
       controller.setAnimalSelecionado(animalController.animais.first.id);
     }
   }
+
   void _showExameDetalhes(dynamic exame) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => ExameDetalhesBottomSheet(
-        exame: exame,
-        onDelete: () async {
-          await controller.excluirExame(exame);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Exame excluído com sucesso!'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          }
-        },
-      ),
+      builder: (context) =>
+          ExameDetalhesBottomSheet(
+            exame: exame,
+            onDelete: () async {
+              await controller.excluirExame(exame);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Exame excluído com sucesso!'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            },
+          ),
     );
   }
 
@@ -75,24 +78,28 @@ class _ExamePageState extends State<ExamePage> {
       builder: (context) {
         return Padding(
           padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
+            bottom: MediaQuery
+                .of(context)
+                .viewInsets
+                .bottom,
           ),
           child: BottomSheetCadastro(
-            titulo: 'Novo exame',
-            labelCampo1: 'Título do exame',
-            labelCampo2: 'Descrição do exame',
-            labelCampo3: 'Data realizada do exame',
-            onSalvar: (titulo, descricao, data, tipo, imagem) async {
-              await controller.criarExame(titulo, descricao, data, tipo, imagem);
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Exame cadastrado com sucesso!'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              }
-            },
+              titulo: 'Novo exame',
+              labelCampo1: 'Título do exame',
+              labelCampo2: 'Descrição do exame',
+              labelCampo3: 'Data realizada do exame',
+
+              onSalvar: (titulo, descricao, data, imagem) async {
+                await controller.criarExame(titulo, descricao, data, imagem!);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Exame cadastrado com sucesso!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              },
           ),
         );
       },

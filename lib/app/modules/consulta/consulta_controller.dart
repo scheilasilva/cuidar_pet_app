@@ -29,7 +29,6 @@ abstract class _ConsultaControllerBase with Store {
     return c.titulo.isNotEmpty &&
         c.descricao.isNotEmpty &&
         c.dataConsulta.isNotEmpty &&
-        c.tipo.isNotEmpty &&
         c.animalId.isNotEmpty;
   }
 
@@ -70,14 +69,13 @@ abstract class _ConsultaControllerBase with Store {
 
   // Criar nova consulta
   @action
-  Future<void> criarConsulta(String titulo, String descricao, String data, String tipo, String? imagem) async {
+  Future<void> criarConsulta(String titulo, String descricao, String data, String? imagem) async {
     if (animalSelecionadoId == null) return;
 
     final novaConsulta = ConsultaStoreFactory.novo(animalSelecionadoId!);
     novaConsulta.titulo = titulo;
     novaConsulta.descricao = descricao;
     novaConsulta.dataConsulta = data;
-    novaConsulta.tipo = tipo;
     novaConsulta.imagem = imagem;
 
     if (imagem != null && imagem.isNotEmpty) {
