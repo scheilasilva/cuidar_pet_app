@@ -18,7 +18,10 @@ class AjustesPage extends StatefulWidget {
 class _AjustesPageState extends State<AjustesPage> {
   @override
   Widget build(BuildContext context) {
-    final Uri toLaunch = Uri.parse('https://wa.me/5551998900614');
+    final Uri emailUrl = Uri.parse(
+        'mailto:scheilasilvaalbino@rede.ulbra.br?subject=Contato%20-%20CuidarPet&body=Olá,%0A%0AEstou%20entrando%20em%20contato%20através%20do%20aplicativo%20CuidarPet.%0A%0AMensagem:%0A'
+    );
+    final Uri termosUrl = Uri.parse('https://www.freeprivacypolicy.com/live/96dbc229-e4e2-4e11-8e06-1db6fd312671');
 
     return Scaffold(
       backgroundColor: const Color(0xFF00845A),
@@ -76,7 +79,7 @@ class _AjustesPageState extends State<AjustesPage> {
                         isScrollControlled: true,
                         shape: const RoundedRectangleBorder(
                           borderRadius:
-                              BorderRadius.vertical(top: Radius.circular(20)),
+                          BorderRadius.vertical(top: Radius.circular(20)),
                         ),
                         builder: (_) => const BottomSheetNotificacoes(),
                       );
@@ -84,10 +87,10 @@ class _AjustesPageState extends State<AjustesPage> {
                   ),
                   const SizedBox(height: 16),
                   _buildMenuOption(
-                    icon: Icons.chat,
+                    icon: Icons.email,
                     label: 'Fale conosco',
                     onTap: () {
-                      UrlHelper.abrir(toLaunch);
+                      UrlHelper.abrir(emailUrl);
                     },
                   ),
                   const SizedBox(height: 16),
@@ -99,7 +102,7 @@ class _AjustesPageState extends State<AjustesPage> {
                         context: context,
                         titulo: 'Sobre nós',
                         mensagem:
-                            'Seu Assistente para o Bem Estar dos Pets!\n\nO CuidarPet é o aplicativo ideal para ajudar você a cuidar do seu pet de forma prática e organizada. Seja um cachorro, gato, cavalo, vaca ou porco, aqui você pode registrar e acompanhar vacinas, medicações, alimentação e outros cuidados essenciais. Configure alertas personalizados para não esquecerde nenhum compromisso importante e garanta a saúde e o bem-estar do seu animal com facilidade.\n\n Simples, intuitivo e completo, o CuidarPet foi feito para quem ama e se preocupa com seus pets!',
+                        'Seu Assistente para o Bem Estar dos Pets!\n\nO CuidarPet é o aplicativo ideal para ajudar você a cuidar do seu pet de forma prática e organizada. Seja um cachorro, gato, cavalo, vaca ou porco, aqui você pode registrar e acompanhar vacinas, medicações, alimentação e outros cuidados essenciais. Configure alertas personalizados para não esquecerde nenhum compromisso importante e garanta a saúde e o bem-estar do seu animal com facilidade.\n\n Simples, intuitivo e completo, o CuidarPet foi feito para quem ama e se preocupa com seus pets!',
                       );
                     },
                   ),
@@ -107,7 +110,9 @@ class _AjustesPageState extends State<AjustesPage> {
                   _buildMenuOption(
                     icon: Icons.description,
                     label: 'Termos e políticas',
-                    onTap: () {},
+                    onTap: () {
+                      UrlHelper.abrir(termosUrl);
+                    },
                   ),
                   const SizedBox(height: 16),
                   _buildMenuOption(
@@ -122,7 +127,7 @@ class _AjustesPageState extends State<AjustesPage> {
                       if (confirmar) {
                         try {
                           final AuthService authService =
-                              Modular.get<AuthService>();
+                          Modular.get<AuthService>();
 
                           await authService.signOut();
 

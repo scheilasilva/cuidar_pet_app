@@ -73,6 +73,55 @@ class _PesoPageState extends State<PesoPage> {
     );
   }
 
+  void _showDeleteDialog(dynamic peso) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmar exclusão'),
+          content: Text('Tem certeza que deseja excluir o registro de peso de ${peso.pesoFormatado} do dia ${peso.dataFormatada}?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _deletePeso(peso);
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Excluir'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deletePeso(dynamic peso) async {
+    try {
+      await controller.excluirPeso(peso); // Passando o objeto completo ao invés do ID
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registro de peso excluído com sucesso!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao excluir registro: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -307,76 +356,87 @@ class _PesoPageState extends State<PesoPage> {
                                   final peso = controller.pesos[index];
                                   return Padding(
                                     padding: const EdgeInsets.only(bottom: 12.0),
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          width: 24,
-                                          height: 24,
-                                          decoration: const BoxDecoration(
-                                            color: Color(0xFF00845A),
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: const Icon(
-                                            Icons.check,
-                                            color: Colors.white,
-                                            size: 16,
-                                          ),
+                                    child: InkWell(
+                                      onTap: () => _showDeleteDialog(peso),
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(8.0),
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(8),
+                                          color: Colors.transparent,
                                         ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          flex: 3,
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                peso.dataFormatada,
-                                                style: const TextStyle(
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              width: 24,
+                                              height: 24,
+                                              decoration: const BoxDecoration(
+                                                color: Color(0xFF00845A),
+                                                shape: BoxShape.circle,
                                               ),
-                                              if (peso.observacao != null && peso.observacao!.isNotEmpty)
-                                                Text(
-                                                  peso.observacao!,
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: Colors.grey[600],
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                        Expanded(
-                                          flex: 1,
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.end,
-                                            children: [
-                                              Text(
-                                                peso.pesoFormatado,
-                                                style: const TextStyle(
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                                textAlign: TextAlign.right,
+                                              child: const Icon(
+                                                Icons.check,
+                                                color: Colors.white,
+                                                size: 16,
                                               ),
-                                              // Mostrar variação se não for o último registro
-                                              if (index < controller.pesos.length - 1)
-                                                Text(
-                                                  controller.getVariacaoPeso(index),
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: controller.getVariacaoPeso(index).startsWith('+')
-                                                        ? Colors.green
-                                                        : controller.getVariacaoPeso(index).startsWith('-')
-                                                        ? Colors.red
-                                                        : Colors.grey[600],
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              flex: 3,
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    peso.dataFormatada,
+                                                    style: const TextStyle(
+                                                      fontSize: 15,
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
                                                   ),
-                                                  textAlign: TextAlign.right,
-                                                ),
-                                            ],
-                                          ),
+                                                  if (peso.observacao != null && peso.observacao!.isNotEmpty)
+                                                    Text(
+                                                      peso.observacao!,
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: Colors.grey[600],
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
+                                            Expanded(
+                                              flex: 1,
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.end,
+                                                children: [
+                                                  Text(
+                                                    peso.pesoFormatado,
+                                                    style: const TextStyle(
+                                                      fontSize: 15,
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
+                                                    textAlign: TextAlign.right,
+                                                  ),
+                                                  // Mostrar variação se não for o último registro
+                                                  if (index < controller.pesos.length - 1)
+                                                    Text(
+                                                      controller.getVariacaoPeso(index),
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: controller.getVariacaoPeso(index).startsWith('+')
+                                                            ? Colors.green
+                                                            : controller.getVariacaoPeso(index).startsWith('-')
+                                                            ? Colors.red
+                                                            : Colors.grey[600],
+                                                      ),
+                                                      textAlign: TextAlign.right,
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      ],
+                                      ),
                                     ),
                                   );
                                 },
