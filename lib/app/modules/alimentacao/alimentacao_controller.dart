@@ -1,5 +1,7 @@
 import 'package:cuidar_pet_app/app/modules/alimentacao/services/alimentacao_service_interface.dart';
 import 'package:cuidar_pet_app/app/modules/alimentacao/store/alimentacao_store.dart';
+import 'package:cuidar_pet_app/app/modules/notificacoes/services/notificacoes_service.dart' show NotificacoesService;
+import 'package:cuidar_pet_app/app/modules/notificacoes/services/notificacoes_settings_service.dart' show NotificacoesSettingsService;
 import 'package:mobx/mobx.dart';
 
 part 'alimentacao_controller.g.dart';
@@ -8,6 +10,8 @@ class AlimentacaoController = _AlimentacaoControllerBase with _$AlimentacaoContr
 
 abstract class _AlimentacaoControllerBase with Store {
   final IAlimentacaoService _service;
+  final NotificacoesService _notificacoesService = NotificacoesService();
+  final NotificacoesSettingsService _settingsService = NotificacoesSettingsService();
 
   @observable
   AlimentacaoStore alimentacao = AlimentacaoStoreFactory.novo('');
@@ -64,6 +68,10 @@ abstract class _AlimentacaoControllerBase with Store {
 
     alimentacao.animalId = animalSelecionadoId!;
     await _service.saveOrUpdate(alimentacao.toModel());
+
+    // Agendar notificação se estiver habilitada
+    await _scheduleNotificacaoIfEnabled(alimentacao);
+
     await loadAlimentacoesByAnimal(animalSelecionadoId!);
     resetForm();
   }
@@ -80,12 +88,19 @@ abstract class _AlimentacaoControllerBase with Store {
     novaAlimentacao.observacao = observacao;
 
     await _service.saveOrUpdate(novaAlimentacao.toModel());
+
+    // Agendar notificação se estiver habilitada
+    await _scheduleNotificacaoIfEnabled(novaAlimentacao);
+
     await loadAlimentacoesByAnimal(animalSelecionadoId!);
   }
 
   // Excluir alimentação específica
   @action
   Future<void> excluirAlimentacao(AlimentacaoStore alimentacaoParaExcluir) async {
+    // Cancelar notificação agendada
+    await _notificacoesService.cancelAlimentacaoNotification(alimentacaoParaExcluir.id);
+
     await _service.delete(alimentacaoParaExcluir.toModel());
     if (animalSelecionadoId != null) {
       await loadAlimentacoesByAnimal(animalSelecionadoId!);
@@ -98,5 +113,31 @@ abstract class _AlimentacaoControllerBase with Store {
     if (animalSelecionadoId != null) {
       alimentacao = AlimentacaoStoreFactory.novo(animalSelecionadoId!);
     }
+  }
+
+  // Método privado para agendar notificação se habilitada
+  Future<void> _scheduleNotificacaoIfEnabled(AlimentacaoStore alimentacao) async {
+    final isEnabled = await _settingsService.isAlimentacaoEnabled();
+    if (!isEnabled) return;
+
+    // Aqui você precisaria obter o nome do animal
+    // Assumindo que você tem acesso ao AnimalController ou pode buscar o nome
+    final animalNome = await _getAnimalNome(alimentacao.animalId);
+
+    await _notificacoesService.scheduleAlimentacaoNotification(
+      alimentacaoId: alimentacao.id,
+      titulo: alimentacao.titulo,
+      alimento: alimentacao.alimento,
+      horario: alimentacao.horario,
+      animalNome: animalNome,
+      animalId: alimentacao.animalId,
+    );
+  }
+
+  // Método para obter o nome do animal (você precisa implementar isso)
+  Future<String> _getAnimalNome(String animalId) async {
+    // Implementar busca do nome do animal pelo ID
+    // Por exemplo, usando o AnimalController ou um service
+    return 'Pet'; // Placeholder
   }
 }

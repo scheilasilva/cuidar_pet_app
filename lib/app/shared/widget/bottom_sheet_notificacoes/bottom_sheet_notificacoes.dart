@@ -1,3 +1,4 @@
+import 'package:cuidar_pet_app/app/modules/notificacoes/services/notificacoes_settings_service.dart';
 import 'package:flutter/material.dart';
 
 class BottomSheetNotificacoes extends StatefulWidget {
@@ -8,10 +9,59 @@ class BottomSheetNotificacoes extends StatefulWidget {
 }
 
 class _BottomSheetNotificacoesState extends State<BottomSheetNotificacoes> {
+  final NotificacoesSettingsService _settingsService = NotificacoesSettingsService();
+
   bool alimentacao = true;
   bool vacinacao = true;
   bool exame = true;
   bool tratamento = true;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    try {
+      final settings = await Future.wait([
+        _settingsService.isAlimentacaoEnabled(),
+        _settingsService.isVacinacaoEnabled(),
+        _settingsService.isExameEnabled(),
+        _settingsService.isTratamentoEnabled(),
+      ]);
+
+      setState(() {
+        alimentacao = settings[0];
+        vacinacao = settings[1];
+        exame = settings[2];
+        tratamento = settings[3];
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _updateSetting(String type, bool value) async {
+    switch (type) {
+      case 'alimentacao':
+        await _settingsService.setAlimentacaoEnabled(value);
+        break;
+      case 'vacinacao':
+        await _settingsService.setVacinacaoEnabled(value);
+        break;
+      case 'exame':
+        await _settingsService.setExameEnabled(value);
+        break;
+      case 'tratamento':
+        await _settingsService.setTratamentoEnabled(value);
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,18 +103,28 @@ class _BottomSheetNotificacoesState extends State<BottomSheetNotificacoes> {
             ],
           ),
           const SizedBox(height: 24),
-          buildSwitchTile('Alimentação', alimentacao, (val) {
-            setState(() => alimentacao = val);
-          }),
-          buildSwitchTile('Vacinação', vacinacao, (val) {
-            setState(() => vacinacao = val);
-          }),
-          buildSwitchTile('Exame', exame, (val) {
-            setState(() => exame = val);
-          }),
-          buildSwitchTile('Tratamento', tratamento, (val) {
-            setState(() => tratamento = val);
-          }),
+
+          if (isLoading)
+            const Center(child: CircularProgressIndicator())
+          else ...[
+            buildSwitchTile('Alimentação', alimentacao, (val) async {
+              setState(() => alimentacao = val);
+              await _updateSetting('alimentacao', val);
+            }),
+            buildSwitchTile('Vacinação', vacinacao, (val) async {
+              setState(() => vacinacao = val);
+              await _updateSetting('vacinacao', val);
+            }),
+            buildSwitchTile('Exame', exame, (val) async {
+              setState(() => exame = val);
+              await _updateSetting('exame', val);
+            }),
+            buildSwitchTile('Tratamento', tratamento, (val) async {
+              setState(() => tratamento = val);
+              await _updateSetting('tratamento', val);
+            }),
+          ],
+
           const SizedBox(height: 12),
         ],
       ),
