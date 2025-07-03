@@ -1,6 +1,9 @@
 import 'package:cuidar_pet_app/app/modules/tratamento/services/tratamento_service_interface.dart';
 import 'package:cuidar_pet_app/app/modules/tratamento/store/tratamento_store.dart';
+import 'package:cuidar_pet_app/app/modules/notificacoes/services/notificacoes_service.dart';
+import 'package:cuidar_pet_app/app/modules/notificacoes/services/notificacoes_settings_service.dart';
 import 'package:mobx/mobx.dart';
+import 'package:uuid/uuid.dart';
 
 part 'tratamento_controller.g.dart';
 
@@ -8,6 +11,8 @@ class TratamentoController = _TratamentoControllerBase with _$TratamentoControll
 
 abstract class _TratamentoControllerBase with Store {
   final ITratamentoService _service;
+  final NotificacoesService _notificacoesService = NotificacoesService();
+  final NotificacoesSettingsService _settingsService = NotificacoesSettingsService();
 
   @observable
   TratamentoStore tratamento = TratamentoStoreFactory.novo('');
@@ -72,8 +77,17 @@ abstract class _TratamentoControllerBase with Store {
   Future<void> salvarTratamento() async {
     if (animalSelecionadoId == null) return;
 
+    // Gerar ID se não existir
+    if (tratamento.id.isEmpty) {
+      tratamento.id = const Uuid().v4();
+    }
+
     tratamento.animalId = animalSelecionadoId!;
     await _service.saveOrUpdate(tratamento.toModel());
+
+    // Agendar notificação se estiver habilitada
+    await _scheduleNotificacaoIfEnabled(tratamento);
+
     await loadTratamentosByAnimal(animalSelecionadoId!);
     resetForm();
   }
@@ -84,6 +98,8 @@ abstract class _TratamentoControllerBase with Store {
     if (animalSelecionadoId == null) return;
 
     final novoTratamento = TratamentoStoreFactory.novo(animalSelecionadoId!);
+    // Gerar ID antes de salvar
+    novoTratamento.id = const Uuid().v4();
     novoTratamento.titulo = titulo;
     novoTratamento.descricao = descricao;
     novoTratamento.dataInicio = data;
@@ -94,6 +110,9 @@ abstract class _TratamentoControllerBase with Store {
     } else {
       await _service.saveOrUpdate(novoTratamento.toModel());
     }
+
+    // Agendar notificação se estiver habilitada
+    await _scheduleNotificacaoIfEnabled(novoTratamento);
 
     await loadTratamentosByAnimal(animalSelecionadoId!);
   }
@@ -112,6 +131,9 @@ abstract class _TratamentoControllerBase with Store {
   // Excluir tratamento específico
   @action
   Future<void> excluirTratamento(TratamentoStore tratamentoParaExcluir) async {
+    // Cancelar notificação agendada
+    await _notificacoesService.cancelTratamentoNotification(tratamentoParaExcluir.id);
+
     await _service.delete(tratamentoParaExcluir.toModel());
     if (animalSelecionadoId != null) {
       await loadTratamentosByAnimal(animalSelecionadoId!);
@@ -124,5 +146,31 @@ abstract class _TratamentoControllerBase with Store {
     if (animalSelecionadoId != null) {
       tratamento = TratamentoStoreFactory.novo(animalSelecionadoId!);
     }
+  }
+
+  // Método privado para agendar notificação se habilitada
+  Future<void> _scheduleNotificacaoIfEnabled(TratamentoStore tratamento) async {
+    final isEnabled = await _settingsService.isTratamentoEnabled();
+    if (!isEnabled) return;
+
+    // Aqui você precisaria obter o nome do animal
+    // Assumindo que você tem acesso ao AnimalController ou pode buscar o nome
+    final animalNome = await _getAnimalNome(tratamento.animalId);
+
+    await _notificacoesService.scheduleTratamentoNotification(
+      tratamentoId: tratamento.id,
+      titulo: tratamento.titulo,
+      descricao: tratamento.descricao,
+      dataInicio: tratamento.dataInicio,
+      animalNome: animalNome,
+      animalId: tratamento.animalId,
+    );
+  }
+
+  // Método para obter o nome do animal (você precisa implementar isso)
+  Future<String> _getAnimalNome(String animalId) async {
+    // Implementar busca do nome do animal pelo ID
+    // Por exemplo, usando o AnimalController ou um service
+    return 'Pet'; // Placeholder
   }
 }

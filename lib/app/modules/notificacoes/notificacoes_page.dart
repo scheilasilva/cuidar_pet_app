@@ -290,7 +290,6 @@ class _NotificacoesPageState extends State<NotificacoesPage> {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
             Expanded(
               child: isLoading
                   ? const Center(

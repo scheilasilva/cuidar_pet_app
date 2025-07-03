@@ -141,6 +141,10 @@ class NotificacoesService {
         final consultaId = payload.replaceFirst('consulta_', '');
         print('🔍 Marcando notificação como enviada para consulta ID: $consultaId');
         _markNotificationAsSent(consultaId);
+      } else if (payload.startsWith('tratamento_')) {
+        final tratamentoId = payload.replaceFirst('tratamento_', '');
+        print('🔍 Marcando notificação como enviada para tratamento ID: $tratamentoId');
+        _markNotificationAsSent(tratamentoId);
       }
     }
   }
@@ -399,7 +403,7 @@ class NotificacoesService {
     print('💾 Notificação de vacinação salva no banco com related_id: $vacinacaoId');
   }
 
-  // CONSULTA - IGUAL À VACINAÇÃO
+  // CONSULTA
   Future<void> scheduleConsultaNotification({
     required String consultaId,
     required String titulo,
@@ -528,6 +532,137 @@ class NotificacoesService {
     );
 
     print('💾 Notificação de consulta salva no banco com related_id: $consultaId');
+  }
+
+  // TRATAMENTO - NOVO
+  Future<void> scheduleTratamentoNotification({
+    required String tratamentoId,
+    required String titulo,
+    required String descricao,
+    required String dataInicio,
+    required String animalNome,
+    required String animalId,
+  }) async {
+    print('💊 Agendando notificação de tratamento...');
+    print('- ID: $tratamentoId');
+    print('- Título: $titulo');
+    print('- Data: $dataInicio');
+    print('- Animal: $animalNome');
+
+    final DateTime? scheduledDate = _parseDataToDateTime(dataInicio);
+
+    if (scheduledDate == null) {
+      print('❌ Erro: Não foi possível fazer parse da data: $dataInicio');
+      return;
+    }
+
+    print('📅 Data parseada: $scheduledDate');
+
+    // Agendar para 00:00:01 do dia do tratamento
+    final DateTime notificationTime = DateTime(
+      scheduledDate.year,
+      scheduledDate.month,
+      scheduledDate.day,
+      0, // hora
+      0, // minuto
+      1, // segundo
+    );
+
+    print('⏰ Horário da notificação: $notificationTime');
+
+    if (notificationTime.isBefore(DateTime.now())) {
+      print('⚠️ Data do tratamento já passou: $dataInicio');
+      // Mesmo assim vamos salvar no banco para aparecer na lista
+      await _saveScheduledNotificacao(
+        type: 'tratamento',
+        title: '💊 Dia do tratamento!',
+        body: '$titulo - $descricao para $animalNome',
+        scheduledTime: notificationTime,
+        relatedId: tratamentoId,
+        animalId: animalId,
+      );
+      print('💾 Notificação de tratamento expirada salva no banco');
+      return;
+    }
+
+    await _scheduleTratamentoNotification(
+      tratamentoId: tratamentoId,
+      titulo: titulo,
+      descricao: descricao,
+      animalNome: animalNome,
+      animalId: animalId,
+      notificationTime: notificationTime,
+    );
+  }
+
+  Future<void> _scheduleTratamentoNotification({
+    required String tratamentoId,
+    required String titulo,
+    required String descricao,
+    required String animalNome,
+    required String animalId,
+    required DateTime notificationTime,
+  }) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+    AndroidNotificationDetails(
+      'tratamento_channel',
+      'Tratamento',
+      channelDescription: 'Notificações de tratamento dos pets',
+      importance: Importance.max,
+      priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+      enableVibration: true,
+      playSound: true,
+      autoCancel: true,
+      category: AndroidNotificationCategory.reminder,
+      visibility: NotificationVisibility.public,
+    );
+
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+    );
+
+    final tz.TZDateTime scheduledDate = tz.TZDateTime.from(notificationTime, tz.local);
+
+    final androidInfo = await DeviceInfoPlugin().androidInfo;
+    final sdkInt = androidInfo.version.sdkInt;
+
+    AndroidScheduleMode scheduleMode = sdkInt >= 31
+        ? AndroidScheduleMode.exactAllowWhileIdle
+        : AndroidScheduleMode.exact;
+
+    try {
+      await _flutterLocalNotificationsPlugin.zonedSchedule(
+        tratamentoId.hashCode,
+        '💊 Dia do tratamento!',
+        '$titulo - $descricao para $animalNome',
+        scheduledDate,
+        platformChannelSpecifics,
+        androidScheduleMode: scheduleMode,
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        payload: 'tratamento_$tratamentoId',
+        matchDateTimeComponents: null,
+      );
+
+      print('✅ Notificação de tratamento agendada com sucesso!');
+      print('🆔 ID da notificação: ${tratamentoId.hashCode}');
+      print('📅 Horário agendado: $scheduledDate');
+
+    } catch (e) {
+      print('❌ Erro ao agendar notificação de tratamento: $e');
+    }
+
+    // Salvar no banco como agendada (sem sentTime)
+    await _saveScheduledNotificacao(
+      type: 'tratamento',
+      title: '💊 Dia do tratamento!',
+      body: '$titulo - $descricao para $animalNome',
+      scheduledTime: notificationTime,
+      relatedId: tratamentoId,
+      animalId: animalId,
+    );
+
+    print('💾 Notificação de tratamento salva no banco com related_id: $tratamentoId');
   }
 
   DateTime? _parseHorarioToDateTime(String horario) {
@@ -696,6 +831,12 @@ class NotificacoesService {
     await _repository.deleteByRelatedId(consultaId);
   }
 
+  // CANCELAR TRATAMENTO - NOVO
+  Future<void> cancelTratamentoNotification(String tratamentoId) async {
+    await _flutterLocalNotificationsPlugin.cancel(tratamentoId.hashCode);
+    await _repository.deleteByRelatedId(tratamentoId);
+  }
+
   Future<void> _saveScheduledNotificacao({
     required String type,
     required String title,
@@ -704,7 +845,7 @@ class NotificacoesService {
     required String relatedId,
     required String animalId,
   }) async {
-    // Gerar um ID único para a notificação (diferente do ID da alimentação/vacinação/consulta)
+    // Gerar um ID único para a notificação (diferente do ID da alimentação/vacinação/consulta/tratamento)
     final notificacaoId = const Uuid().v4();
 
     final notificacao = NotificacoesModel(
@@ -714,7 +855,7 @@ class NotificacoesService {
       body: body,
       scheduledTime: scheduledTime,
       // sentTime: null, // Não definir sentTime - será definido quando a notificação for realmente enviada
-      relatedId: relatedId,  // ID da alimentação/vacinação/consulta (relacionado)
+      relatedId: relatedId,  // ID da alimentação/vacinação/consulta/tratamento (relacionado)
       animalId: animalId,
       createdAt: DateTime.now(),
     );
