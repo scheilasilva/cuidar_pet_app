@@ -24,6 +24,9 @@ abstract class _AlimentacaoControllerBase with Store {
   String? animalSelecionadoId;
 
   @observable
+  String? animalSelecionadoNome; // IGUAL AO ID - só uma variável simples
+
+  @observable
   bool isLoading = false;
 
   _AlimentacaoControllerBase(this._service);
@@ -38,10 +41,11 @@ abstract class _AlimentacaoControllerBase with Store {
         a.animalId.isNotEmpty;
   }
 
-  // Definir animal selecionado
+  // Definir animal selecionado - IGUAL AO ID, mas agora recebe nome também
   @action
-  void setAnimalSelecionado(String animalId) {
+  void setAnimalSelecionado(String animalId, String animalNome) {
     animalSelecionadoId = animalId;
+    animalSelecionadoNome = animalNome; // IGUAL AO ID
     alimentacao = AlimentacaoStoreFactory.novo(animalId);
     loadAlimentacoesByAnimal(animalId);
   }
@@ -135,26 +139,19 @@ abstract class _AlimentacaoControllerBase with Store {
       return;
     }
 
-    // Aqui você precisaria obter o nome do animal
-    // Assumindo que você tem acesso ao AnimalController ou pode buscar o nome
-    final animalNome = await _getAnimalNome(alimentacao.animalId);
+    // Usar o nome do animal selecionado - IGUAL AO ID
+    final animalNome = animalSelecionadoNome ?? 'Pet';
 
     print('🔔 Agendando notificação para alimentação ID: ${alimentacao.id}');
+    print('🐾 Animal: $animalNome');
 
     await _notificacoesService.scheduleAlimentacaoNotification(
       alimentacaoId: alimentacao.id,
       titulo: alimentacao.titulo,
       alimento: alimentacao.alimento,
       horario: alimentacao.horario,
-      animalNome: animalNome,
+      animalNome: animalNome, // USAR A VARIÁVEL DIRETAMENTE
       animalId: alimentacao.animalId,
     );
-  }
-
-  // Método para obter o nome do animal (você precisa implementar isso)
-  Future<String> _getAnimalNome(String animalId) async {
-    // Implementar busca do nome do animal pelo ID
-    // Por exemplo, usando o AnimalController ou um service
-    return 'Pet'; // Placeholder
   }
 }

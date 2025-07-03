@@ -28,11 +28,13 @@ class _ConsultaPageState extends State<ConsultaPage> {
   void _initializeWithSelectedAnimal() {
     // Usar o animal selecionado do carrossel
     if (animalController.animalSelecionadoCarrossel != null) {
-      controller.setAnimalSelecionado(animalController.animalSelecionadoCarrossel!.id);
+      controller.setAnimalSelecionado(animalController.animalSelecionadoCarrossel!.id,
+          animalController.animalSelecionadoCarrossel!.nome);
     } else if (animalController.animais.isNotEmpty) {
       // Fallback: definir o primeiro animal como selecionado
       animalController.setAnimalSelecionadoCarrossel(0);
-      controller.setAnimalSelecionado(animalController.animais.first.id);
+      controller.setAnimalSelecionado(animalController.animais.first.id,
+          animalController.animais.first.nome);
     }
   }
 

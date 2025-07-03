@@ -65,6 +65,24 @@ mixin _$AlimentacaoController on _AlimentacaoControllerBase, Store {
     });
   }
 
+  late final _$animalSelecionadoNomeAtom = Atom(
+      name: '_AlimentacaoControllerBase.animalSelecionadoNome',
+      context: context);
+
+  @override
+  String? get animalSelecionadoNome {
+    _$animalSelecionadoNomeAtom.reportRead();
+    return super.animalSelecionadoNome;
+  }
+
+  @override
+  set animalSelecionadoNome(String? value) {
+    _$animalSelecionadoNomeAtom.reportWrite(value, super.animalSelecionadoNome,
+        () {
+      super.animalSelecionadoNome = value;
+    });
+  }
+
   late final _$isLoadingAtom =
       Atom(name: '_AlimentacaoControllerBase.isLoading', context: context);
 
@@ -125,11 +143,11 @@ mixin _$AlimentacaoController on _AlimentacaoControllerBase, Store {
       ActionController(name: '_AlimentacaoControllerBase', context: context);
 
   @override
-  void setAnimalSelecionado(String animalId) {
+  void setAnimalSelecionado(String animalId, String animalNome) {
     final _$actionInfo = _$_AlimentacaoControllerBaseActionController
         .startAction(name: '_AlimentacaoControllerBase.setAnimalSelecionado');
     try {
-      return super.setAnimalSelecionado(animalId);
+      return super.setAnimalSelecionado(animalId, animalNome);
     } finally {
       _$_AlimentacaoControllerBaseActionController.endAction(_$actionInfo);
     }
@@ -152,6 +170,7 @@ mixin _$AlimentacaoController on _AlimentacaoControllerBase, Store {
 alimentacao: ${alimentacao},
 alimentacoes: ${alimentacoes},
 animalSelecionadoId: ${animalSelecionadoId},
+animalSelecionadoNome: ${animalSelecionadoNome},
 isLoading: ${isLoading},
 isFormValid: ${isFormValid}
     ''';

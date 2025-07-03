@@ -27,6 +27,9 @@ abstract class _TratamentoControllerBase with Store {
   String? animalSelecionadoId;
 
   @observable
+  String? animalSelecionadoNome; // IGUAL AO ID
+
+  @observable
   bool isLoading = false;
 
   _TratamentoControllerBase(this._service);
@@ -42,8 +45,9 @@ abstract class _TratamentoControllerBase with Store {
 
   // Definir animal selecionado
   @action
-  void setAnimalSelecionado(String animalId) {
+  void setAnimalSelecionado(String animalId, String animalNome) {
     animalSelecionadoId = animalId;
+    animalSelecionadoNome = animalNome; // IGUAL AO ID
     tratamento = TratamentoStoreFactory.novo(animalId);
     loadTratamentosByAnimal(animalId);
   }
@@ -153,24 +157,19 @@ abstract class _TratamentoControllerBase with Store {
     final isEnabled = await _settingsService.isTratamentoEnabled();
     if (!isEnabled) return;
 
-    // Aqui você precisaria obter o nome do animal
-    // Assumindo que você tem acesso ao AnimalController ou pode buscar o nome
-    final animalNome = await _getAnimalNome(tratamento.animalId);
+    // Usar o nome do animal selecionado - IGUAL AO ID
+    final animalNome = animalSelecionadoNome ?? 'Pet';
+
+    print('💊 Agendando notificação de tratamento...');
+    print('🐾 Animal: $animalNome');
 
     await _notificacoesService.scheduleTratamentoNotification(
       tratamentoId: tratamento.id,
       titulo: tratamento.titulo,
       descricao: tratamento.descricao,
       dataInicio: tratamento.dataInicio,
-      animalNome: animalNome,
+      animalNome: animalNome, // USAR A VARIÁVEL DIRETAMENTE
       animalId: tratamento.animalId,
     );
-  }
-
-  // Método para obter o nome do animal (você precisa implementar isso)
-  Future<String> _getAnimalNome(String animalId) async {
-    // Implementar busca do nome do animal pelo ID
-    // Por exemplo, usando o AnimalController ou um service
-    return 'Pet'; // Placeholder
   }
 }

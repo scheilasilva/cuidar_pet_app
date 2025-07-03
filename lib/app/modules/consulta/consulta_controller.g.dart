@@ -65,6 +65,23 @@ mixin _$ConsultaController on _ConsultaControllerBase, Store {
     });
   }
 
+  late final _$animalSelecionadoNomeAtom = Atom(
+      name: '_ConsultaControllerBase.animalSelecionadoNome', context: context);
+
+  @override
+  String? get animalSelecionadoNome {
+    _$animalSelecionadoNomeAtom.reportRead();
+    return super.animalSelecionadoNome;
+  }
+
+  @override
+  set animalSelecionadoNome(String? value) {
+    _$animalSelecionadoNomeAtom.reportWrite(value, super.animalSelecionadoNome,
+        () {
+      super.animalSelecionadoNome = value;
+    });
+  }
+
   late final _$isLoadingAtom =
       Atom(name: '_ConsultaControllerBase.isLoading', context: context);
 
@@ -122,11 +139,11 @@ mixin _$ConsultaController on _ConsultaControllerBase, Store {
       ActionController(name: '_ConsultaControllerBase', context: context);
 
   @override
-  void setAnimalSelecionado(String animalId) {
+  void setAnimalSelecionado(String animalId, String animalNome) {
     final _$actionInfo = _$_ConsultaControllerBaseActionController.startAction(
         name: '_ConsultaControllerBase.setAnimalSelecionado');
     try {
-      return super.setAnimalSelecionado(animalId);
+      return super.setAnimalSelecionado(animalId, animalNome);
     } finally {
       _$_ConsultaControllerBaseActionController.endAction(_$actionInfo);
     }
@@ -149,6 +166,7 @@ mixin _$ConsultaController on _ConsultaControllerBase, Store {
 consulta: ${consulta},
 consultas: ${consultas},
 animalSelecionadoId: ${animalSelecionadoId},
+animalSelecionadoNome: ${animalSelecionadoNome},
 isLoading: ${isLoading},
 isFormValid: ${isFormValid}
     ''';

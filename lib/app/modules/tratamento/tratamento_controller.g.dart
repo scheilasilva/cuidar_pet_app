@@ -85,6 +85,24 @@ mixin _$TratamentoController on _TratamentoControllerBase, Store {
     });
   }
 
+  late final _$animalSelecionadoNomeAtom = Atom(
+      name: '_TratamentoControllerBase.animalSelecionadoNome',
+      context: context);
+
+  @override
+  String? get animalSelecionadoNome {
+    _$animalSelecionadoNomeAtom.reportRead();
+    return super.animalSelecionadoNome;
+  }
+
+  @override
+  set animalSelecionadoNome(String? value) {
+    _$animalSelecionadoNomeAtom.reportWrite(value, super.animalSelecionadoNome,
+        () {
+      super.animalSelecionadoNome = value;
+    });
+  }
+
   late final _$isLoadingAtom =
       Atom(name: '_TratamentoControllerBase.isLoading', context: context);
 
@@ -155,11 +173,11 @@ mixin _$TratamentoController on _TratamentoControllerBase, Store {
       ActionController(name: '_TratamentoControllerBase', context: context);
 
   @override
-  void setAnimalSelecionado(String animalId) {
+  void setAnimalSelecionado(String animalId, String animalNome) {
     final _$actionInfo = _$_TratamentoControllerBaseActionController
         .startAction(name: '_TratamentoControllerBase.setAnimalSelecionado');
     try {
-      return super.setAnimalSelecionado(animalId);
+      return super.setAnimalSelecionado(animalId, animalNome);
     } finally {
       _$_TratamentoControllerBaseActionController.endAction(_$actionInfo);
     }
@@ -183,6 +201,7 @@ tratamento: ${tratamento},
 tratamentosEmAndamento: ${tratamentosEmAndamento},
 tratamentosConcluidos: ${tratamentosConcluidos},
 animalSelecionadoId: ${animalSelecionadoId},
+animalSelecionadoNome: ${animalSelecionadoNome},
 isLoading: ${isLoading},
 isFormValid: ${isFormValid}
     ''';

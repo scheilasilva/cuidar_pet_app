@@ -24,6 +24,9 @@ abstract class _ExameControllerBase with Store {
   String? animalSelecionadoId;
 
   @observable
+  String? animalSelecionadoNome; // ✅ IGUAL AO ID - só uma variável simples
+
+  @observable
   bool isLoading = false;
 
   _ExameControllerBase(this._service);
@@ -37,10 +40,11 @@ abstract class _ExameControllerBase with Store {
         e.animalId.isNotEmpty;
   }
 
-  // Definir animal selecionado
+  // ✅ Definir animal selecionado - IGUAL AO ID, mas agora recebe nome também
   @action
-  void setAnimalSelecionado(String animalId) {
+  void setAnimalSelecionado(String animalId, String animalNome) {
     animalSelecionadoId = animalId;
+    animalSelecionadoNome = animalNome; // ✅ IGUAL AO ID
     exame = ExameStoreFactory.novo(animalId);
     loadExamesByAnimal(animalId);
   }
@@ -81,7 +85,7 @@ abstract class _ExameControllerBase with Store {
     resetForm();
   }
 
-  // NOVO: Criar novo exame com imagem
+  // Criar novo exame com imagem
   @action
   Future<void> criarExameComImagem(String titulo, String descricao, String data, String imagePath) async {
     if (animalSelecionadoId == null) return;
@@ -92,6 +96,9 @@ abstract class _ExameControllerBase with Store {
     novoExame.titulo = titulo;
     novoExame.descricao = descricao;
     novoExame.dataRealizacao = data;
+
+    print('🔬 Criando exame com ID: ${novoExame.id}');
+    print('🐾 Animal: $animalSelecionadoNome');
 
     await _service.saveOrUpdateWithImage(novoExame.toModel(), imagePath);
 
@@ -113,6 +120,9 @@ abstract class _ExameControllerBase with Store {
     novoExame.descricao = descricao;
     novoExame.dataRealizacao = data;
     novoExame.imagem = imagem;
+
+    print('🔬 Criando exame com ID: ${novoExame.id}');
+    print('🐾 Animal: $animalSelecionadoNome');
 
     if (imagem != null && imagem.isNotEmpty) {
       await _service.saveOrUpdateWithImage(novoExame.toModel(), imagem);
@@ -146,29 +156,27 @@ abstract class _ExameControllerBase with Store {
     }
   }
 
-  // Método privado para agendar notificação se habilitada
+  // ✅ Método privado para agendar notificação se habilitada
   Future<void> _scheduleNotificacaoIfEnabled(ExameStore exame) async {
     final isEnabled = await _settingsService.isExameEnabled();
-    if (!isEnabled) return;
+    if (!isEnabled) {
+      print('🔕 Notificações de exame desabilitadas');
+      return;
+    }
 
-    // Aqui você precisaria obter o nome do animal
-    // Assumindo que você tem acesso ao AnimalController ou pode buscar o nome
-    final animalNome = await _getAnimalNome(exame.animalId);
+    // ✅ Usar o nome do animal selecionado - IGUAL AO ID
+    final animalNome = animalSelecionadoNome ?? 'Pet';
+
+    print('🔬 Agendando notificação de exame...');
+    print('🐾 Animal: $animalNome');
 
     await _notificacoesService.scheduleExameNotification(
       exameId: exame.id,
       titulo: exame.titulo,
       descricao: exame.descricao,
       dataRealizacao: exame.dataRealizacao,
-      animalNome: animalNome,
+      animalNome: animalNome, // ✅ USAR A VARIÁVEL DIRETAMENTE
       animalId: exame.animalId,
     );
-  }
-
-  // Método para obter o nome do animal (você precisa implementar isso)
-  Future<String> _getAnimalNome(String animalId) async {
-    // Implementar busca do nome do animal pelo ID
-    // Por exemplo, usando o AnimalController ou um service
-    return 'Pet'; // Placeholder
   }
 }
