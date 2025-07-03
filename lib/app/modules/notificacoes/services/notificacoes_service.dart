@@ -133,6 +133,10 @@ class NotificacoesService {
         final alimentacaoId = payload.replaceFirst('alimentacao_', '');
         print('🔍 Marcando notificação como enviada para alimentacao ID: $alimentacaoId');
         _markNotificationAsSent(alimentacaoId);
+      } else if (payload.startsWith('vacinacao_')) {
+        final vacinacaoId = payload.replaceFirst('vacinacao_', '');
+        print('🔍 Marcando notificação como enviada para vacinacao ID: $vacinacaoId');
+        _markNotificationAsSent(vacinacaoId);
       }
     }
   }
@@ -147,6 +151,7 @@ class NotificacoesService {
     }
   }
 
+  // ALIMENTAÇÃO - Método existente
   Future<void> scheduleAlimentacaoNotification({
     required String alimentacaoId,
     required String titulo,
@@ -155,7 +160,7 @@ class NotificacoesService {
     required String animalNome,
     required String animalId,
   }) async {
-    print('🔔 Agendando notificação para: $horario');
+    print('🔔 Agendando notificação de alimentação para: $horario');
 
     final DateTime? scheduledTime = _parseHorarioToDateTime(horario);
 
@@ -168,7 +173,7 @@ class NotificacoesService {
 
     if (notificationTime.isBefore(DateTime.now())) {
       final tomorrow = notificationTime.add(const Duration(days: 1));
-      await _scheduleNotification(
+      await _scheduleAlimentacaoNotification(
         alimentacaoId: alimentacaoId,
         titulo: titulo,
         alimento: alimento,
@@ -179,7 +184,7 @@ class NotificacoesService {
       return;
     }
 
-    await _scheduleNotification(
+    await _scheduleAlimentacaoNotification(
       alimentacaoId: alimentacaoId,
       titulo: titulo,
       alimento: alimento,
@@ -189,7 +194,7 @@ class NotificacoesService {
     );
   }
 
-  Future<void> _scheduleNotification({
+  Future<void> _scheduleAlimentacaoNotification({
     required String alimentacaoId,
     required String titulo,
     required String alimento,
@@ -238,17 +243,16 @@ class NotificacoesService {
         matchDateTimeComponents: null,
       );
 
-      print('✅ Notificação agendada com sucesso!');
+      print('✅ Notificação de alimentação agendada com sucesso!');
       print('🆔 ID da notificação: ${alimentacaoId.hashCode}');
       print('📅 Horário agendado: $scheduledDate');
 
     } catch (e) {
-      print('❌ Erro ao agendar notificação: $e');
+      print('❌ Erro ao agendar notificação de alimentação: $e');
     }
 
     // Salvar no banco como agendada (sem sentTime)
     await _saveScheduledNotificacao(
-      id: alimentacaoId,
       type: 'alimentacao',
       title: '🍽️ Hora da alimentação!',
       body: 'Em 10 minutos: $titulo - $alimento para $animalNome',
@@ -257,7 +261,138 @@ class NotificacoesService {
       animalId: animalId,
     );
 
-    print('💾 Notificação salva no banco com related_id: $alimentacaoId');
+    print('💾 Notificação de alimentação salva no banco com related_id: $alimentacaoId');
+  }
+
+  // VACINAÇÃO - Método atualizado
+  Future<void> scheduleVacinacaoNotification({
+    required String vacinacaoId,
+    required String titulo,
+    required String descricao,
+    required String dataVacinacao,
+    required String animalNome,
+    required String animalId,
+  }) async {
+    print('💉 Agendando notificação de vacinação...');
+    print('- ID: $vacinacaoId');
+    print('- Título: $titulo');
+    print('- Data: $dataVacinacao');
+    print('- Animal: $animalNome');
+
+    final DateTime? scheduledDate = _parseDataVacinacaoToDateTime(dataVacinacao);
+
+    if (scheduledDate == null) {
+      print('❌ Erro: Não foi possível fazer parse da data: $dataVacinacao');
+      return;
+    }
+
+    print('📅 Data parseada: $scheduledDate');
+
+    // Agendar para 00:00:01 do dia da vacinação
+    final DateTime notificationTime = DateTime(
+      scheduledDate.year,
+      scheduledDate.month,
+      scheduledDate.day,
+      0, // hora
+      0, // minuto
+      1, // segundo
+    );
+
+    print('⏰ Horário da notificação: $notificationTime');
+
+    if (notificationTime.isBefore(DateTime.now())) {
+      print('⚠️ Data da vacinação já passou: $dataVacinacao');
+      // Mesmo assim vamos salvar no banco para aparecer na lista
+      await _saveScheduledNotificacao(
+        type: 'vacinacao',
+        title: '💉 Dia da vacinação!',
+        body: '$titulo - $descricao para $animalNome',
+        scheduledTime: notificationTime,
+        relatedId: vacinacaoId,
+        animalId: animalId,
+      );
+      print('💾 Notificação de vacinação expirada salva no banco');
+      return;
+    }
+
+    await _scheduleVacinacaoNotification(
+      vacinacaoId: vacinacaoId,
+      titulo: titulo,
+      descricao: descricao,
+      animalNome: animalNome,
+      animalId: animalId,
+      notificationTime: notificationTime,
+    );
+  }
+
+  Future<void> _scheduleVacinacaoNotification({
+    required String vacinacaoId,
+    required String titulo,
+    required String descricao,
+    required String animalNome,
+    required String animalId,
+    required DateTime notificationTime,
+  }) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+    AndroidNotificationDetails(
+      'vacinacao_channel',
+      'Vacinação',
+      channelDescription: 'Notificações de vacinação dos pets',
+      importance: Importance.max,
+      priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+      enableVibration: true,
+      playSound: true,
+      autoCancel: true,
+      category: AndroidNotificationCategory.reminder,
+      visibility: NotificationVisibility.public,
+    );
+
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+    );
+
+    final tz.TZDateTime scheduledDate = tz.TZDateTime.from(notificationTime, tz.local);
+
+    final androidInfo = await DeviceInfoPlugin().androidInfo;
+    final sdkInt = androidInfo.version.sdkInt;
+
+    AndroidScheduleMode scheduleMode = sdkInt >= 31
+        ? AndroidScheduleMode.exactAllowWhileIdle
+        : AndroidScheduleMode.exact;
+
+    try {
+      await _flutterLocalNotificationsPlugin.zonedSchedule(
+        vacinacaoId.hashCode,
+        '💉 Dia da vacinação!',
+        '$titulo - $descricao para $animalNome',
+        scheduledDate,
+        platformChannelSpecifics,
+        androidScheduleMode: scheduleMode,
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        payload: 'vacinacao_$vacinacaoId',
+        matchDateTimeComponents: null,
+      );
+
+      print('✅ Notificação de vacinação agendada com sucesso!');
+      print('🆔 ID da notificação: ${vacinacaoId.hashCode}');
+      print('📅 Horário agendado: $scheduledDate');
+
+    } catch (e) {
+      print('❌ Erro ao agendar notificação de vacinação: $e');
+    }
+
+    // Salvar no banco como agendada (sem sentTime)
+    await _saveScheduledNotificacao(
+      type: 'vacinacao',
+      title: '💉 Dia da vacinação!',
+      body: '$titulo - $descricao para $animalNome',
+      scheduledTime: notificationTime,
+      relatedId: vacinacaoId,
+      animalId: animalId,
+    );
+
+    print('💾 Notificação de vacinação salva no banco com related_id: $vacinacaoId');
   }
 
   DateTime? _parseHorarioToDateTime(String horario) {
@@ -281,6 +416,31 @@ class NotificacoesService {
 
       return scheduledTime;
     } catch (e) {
+      return null;
+    }
+  }
+
+  DateTime? _parseDataVacinacaoToDateTime(String dataVacinacao) {
+    try {
+      print('🔍 Fazendo parse da data: $dataVacinacao');
+
+      // Assumindo formato dd/MM/yyyy
+      final parts = dataVacinacao.split('/');
+      if (parts.length != 3) {
+        print('❌ Formato de data inválido: $dataVacinacao');
+        return null;
+      }
+
+      final day = int.parse(parts[0]);
+      final month = int.parse(parts[1]);
+      final year = int.parse(parts[2]);
+
+      final parsedDate = DateTime(year, month, day);
+      print('✅ Data parseada com sucesso: $parsedDate');
+
+      return parsedDate;
+    } catch (e) {
+      print('❌ Erro ao fazer parse da data: $dataVacinacao - $e');
       return null;
     }
   }
@@ -391,8 +551,12 @@ class NotificacoesService {
     await _repository.deleteByRelatedId(alimentacaoId);
   }
 
+  Future<void> cancelVacinacaoNotification(String vacinacaoId) async {
+    await _flutterLocalNotificationsPlugin.cancel(vacinacaoId.hashCode);
+    await _repository.deleteByRelatedId(vacinacaoId);
+  }
+
   Future<void> _saveScheduledNotificacao({
-    required String id,
     required String type,
     required String title,
     required String body,
@@ -400,7 +564,7 @@ class NotificacoesService {
     required String relatedId,
     required String animalId,
   }) async {
-    // Gerar um ID único para a notificação (diferente do ID da alimentação)
+    // Gerar um ID único para a notificação (diferente do ID da alimentação/vacinação)
     final notificacaoId = const Uuid().v4();
 
     final notificacao = NotificacoesModel(
@@ -410,13 +574,13 @@ class NotificacoesService {
       body: body,
       scheduledTime: scheduledTime,
       // sentTime: null, // Não definir sentTime - será definido quando a notificação for realmente enviada
-      relatedId: relatedId,  // ID da alimentação (relacionado)
+      relatedId: relatedId,  // ID da alimentação/vacinação (relacionado)
       animalId: animalId,
       createdAt: DateTime.now(),
     );
 
     await _repository.save(notificacao);
-    print('💾 Notificação salva: ID=${notificacao.id}, RelatedID=${notificacao.relatedId}');
+    print('💾 Notificação salva: ID=${notificacao.id}, RelatedID=${notificacao.relatedId}, Type=${notificacao.type}');
   }
 
   Future<void> markNotificacaoAsSent(String id) async {

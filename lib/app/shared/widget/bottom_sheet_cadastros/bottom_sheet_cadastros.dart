@@ -46,7 +46,7 @@ class _BottomSheetCadastroState extends State<BottomSheetCadastro> {
       context: context,
       initialDate: _dataSelecionada ?? DateTime.now(),
       firstDate: DateTime(2000),
-      lastDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 3650)),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
