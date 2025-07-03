@@ -3,6 +3,7 @@ import 'package:cuidar_pet_app/app/modules/alimentacao/store/alimentacao_store.d
 import 'package:cuidar_pet_app/app/modules/notificacoes/services/notificacoes_service.dart' show NotificacoesService;
 import 'package:cuidar_pet_app/app/modules/notificacoes/services/notificacoes_settings_service.dart' show NotificacoesSettingsService;
 import 'package:mobx/mobx.dart';
+import 'package:uuid/uuid.dart';
 
 part 'alimentacao_controller.g.dart';
 
@@ -67,6 +68,12 @@ abstract class _AlimentacaoControllerBase with Store {
     if (animalSelecionadoId == null) return;
 
     alimentacao.animalId = animalSelecionadoId!;
+
+    // Gerar ID se não existir
+    if (alimentacao.id.isEmpty) {
+      alimentacao.id = const Uuid().v4();
+    }
+
     await _service.saveOrUpdate(alimentacao.toModel());
 
     // Agendar notificação se estiver habilitada
@@ -82,10 +89,15 @@ abstract class _AlimentacaoControllerBase with Store {
     if (animalSelecionadoId == null) return;
 
     final novaAlimentacao = AlimentacaoStoreFactory.novo(animalSelecionadoId!);
+
+    // Gerar ID antes de salvar
+    novaAlimentacao.id = const Uuid().v4();
     novaAlimentacao.titulo = titulo;
     novaAlimentacao.horario = horario;
     novaAlimentacao.alimento = alimento;
     novaAlimentacao.observacao = observacao;
+
+    print('🍽️ Criando alimentação com ID: ${novaAlimentacao.id}');
 
     await _service.saveOrUpdate(novaAlimentacao.toModel());
 
@@ -118,11 +130,16 @@ abstract class _AlimentacaoControllerBase with Store {
   // Método privado para agendar notificação se habilitada
   Future<void> _scheduleNotificacaoIfEnabled(AlimentacaoStore alimentacao) async {
     final isEnabled = await _settingsService.isAlimentacaoEnabled();
-    if (!isEnabled) return;
+    if (!isEnabled) {
+      print('🔕 Notificações de alimentação desabilitadas');
+      return;
+    }
 
     // Aqui você precisaria obter o nome do animal
     // Assumindo que você tem acesso ao AnimalController ou pode buscar o nome
     final animalNome = await _getAnimalNome(alimentacao.animalId);
+
+    print('🔔 Agendando notificação para alimentação ID: ${alimentacao.id}');
 
     await _notificacoesService.scheduleAlimentacaoNotification(
       alimentacaoId: alimentacao.id,

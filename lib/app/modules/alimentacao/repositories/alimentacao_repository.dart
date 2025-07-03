@@ -66,10 +66,10 @@ class AlimentacaoRepository implements IAlimentacaoRepository {
   Future<void> save(AlimentacaoModel alimentacao) async {
     final db = await _databaseLocal.getDb();
 
-    // Gerar ID se não existir
-    if (alimentacao.id.isEmpty) {
-      alimentacao.id = const Uuid().v4();
-    }
+    // Garantir que o ID seja gerado se estiver vazio
+    alimentacao.ensureId();
+
+    print('💾 Salvando alimentação com ID: ${alimentacao.id}');
 
     await db.insert(
       _tableName,

@@ -1,4 +1,4 @@
-import 'package:cuidar_pet_app/app/modules/notificacoes/models/notificacoes_model.dart' show NotificacoesModel;
+import 'package:cuidar_pet_app/app/modules/notificacoes/models/notificacoes_model.dart';
 import 'package:cuidar_pet_app/app/shared/databases/database_local_pets.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
@@ -42,6 +42,11 @@ class NotificacoesRepository {
       orderBy: 'sent_time DESC',
     );
 
+    print('📊 Notificações enviadas encontradas: ${maps.length}');
+    for (var map in maps) {
+      print('- ID: ${map['id']}, Related ID: ${map['related_id']}, Título: ${map['title']}');
+    }
+
     return List.generate(maps.length, (i) => _fromMap(maps[i]));
   }
 
@@ -69,16 +74,30 @@ class NotificacoesRepository {
       _toMap(notificacao),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+
+    print('💾 Notificação salva: ID=${notificacao.id}, RelatedID=${notificacao.relatedId}');
   }
 
   Future<void> markAsSent(String id) async {
     final db = await _databaseLocal.getDb();
-    await db.update(
+    final result = await db.update(
       _tableName,
       {'sent_time': DateTime.now().millisecondsSinceEpoch},
       where: 'id = ?',
       whereArgs: [id],
     );
+    print('📝 Notificação marcada como enviada por ID: $id (linhas afetadas: $result)');
+  }
+
+  Future<void> markAsSentByRelatedId(String relatedId) async {
+    final db = await _databaseLocal.getDb();
+    final result = await db.update(
+      _tableName,
+      {'sent_time': DateTime.now().millisecondsSinceEpoch},
+      where: 'related_id = ?',
+      whereArgs: [relatedId],
+    );
+    print('📝 Notificação marcada como enviada por RelatedID: $relatedId (linhas afetadas: $result)');
   }
 
   Future<void> markAsRead(String id) async {

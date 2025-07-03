@@ -1,3 +1,5 @@
+import 'package:uuid/uuid.dart';
+
 class AlimentacaoModel {
   String id;
   String animalId; // Referência ao animal
@@ -16,4 +18,11 @@ class AlimentacaoModel {
     required this.observacao,
     required this.createdAt,
   });
+
+  // Método para garantir que o ID seja gerado se estiver vazio
+  void ensureId() {
+    if (id.isEmpty) {
+      id = const Uuid().v4();
+    }
+  }
 }

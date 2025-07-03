@@ -1,8 +1,11 @@
+import 'package:cuidar_pet_app/app/modules/notificacoes/models/notificacoes_model.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:permission_handler/permission_handler.dart';
-import '../models/notificacoes_model.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:uuid/uuid.dart';
+
 import '../repositories/notificacoes_repository.dart';
 
 class NotificacoesService {
@@ -43,35 +46,63 @@ class NotificacoesService {
 
     print('📱 Notificações inicializadas: $initialized');
 
-    await _requestPermissions();
-    await checkNotificationSettings(); // Chamada do método público
+    await _requestAllPermissions();
+    await checkNotificationSettings();
   }
 
-  Future<void> _requestPermissions() async {
-    print('🔐 Verificando permissões...');
+  Future<void> _requestAllPermissions() async {
+    print('🔐 Verificando todas as permissões...');
+
+    final androidInfo = await DeviceInfoPlugin().androidInfo;
+    final sdkInt = androidInfo.version.sdkInt;
+    print('📱 Versão do Android: API $sdkInt');
 
     final notificationStatus = await Permission.notification.status;
-    print('📋 Status da permissão de notificação: $notificationStatus');
+    print('📋 Permissão de notificação: $notificationStatus');
 
     if (notificationStatus.isDenied) {
       final result = await Permission.notification.request();
       print('📋 Resultado da solicitação: $result');
     }
 
-    if (await Permission.scheduleExactAlarm.isDenied) {
-      final result = await Permission.scheduleExactAlarm.request();
-      print('⏰ Permissão de alarme exato: $result');
+    if (sdkInt >= 31) {
+      try {
+        final exactAlarmStatus = await Permission.scheduleExactAlarm.status;
+        print('⏰ Permissão de alarme exato: $exactAlarmStatus');
+
+        if (exactAlarmStatus.isDenied) {
+          final result = await Permission.scheduleExactAlarm.request();
+          print('⏰ Resultado alarme exato: $result');
+        }
+      } catch (e) {
+        print('⚠️ Erro ao verificar permissão de alarme exato: $e');
+      }
     }
 
-    final batteryOptimization = await Permission.ignoreBatteryOptimizations.status;
-    print('🔋 Otimização de bateria: $batteryOptimization');
+    try {
+      final batteryOptimization = await Permission.ignoreBatteryOptimizations.status;
+      print('🔋 Otimização de bateria: $batteryOptimization');
+    } catch (e) {
+      print('⚠️ Erro ao verificar otimização de bateria: $e');
+    }
 
-    if (batteryOptimization.isDenied) {
-      print('⚠️ Recomendado desabilitar otimização de bateria para o app');
+    await _checkExactAlarmCapability();
+  }
+
+  Future<void> _checkExactAlarmCapability() async {
+    try {
+      final androidImpl = _flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+
+      if (androidImpl != null) {
+        final canScheduleExactAlarms = await androidImpl.canScheduleExactNotifications();
+        print('🎯 Pode agendar alarmes exatos: $canScheduleExactAlarms');
+      }
+    } catch (e) {
+      print('⚠️ Erro ao verificar capacidade de alarmes exatos: $e');
     }
   }
 
-  // MÉTODO PÚBLICO para verificar configurações
   Future<void> checkNotificationSettings() async {
     print('⚙️ Verificando configurações de notificação...');
 
@@ -80,11 +111,9 @@ class NotificacoesService {
         ?.areNotificationsEnabled();
 
     print('🔔 Notificações habilitadas no sistema: $areNotificationsEnabled');
-
     await checkPendingNotifications();
   }
 
-  // MÉTODO PÚBLICO para verificar notificações pendentes
   Future<void> checkPendingNotifications() async {
     final pendingNotifications = await _flutterLocalNotificationsPlugin.pendingNotificationRequests();
     print('📋 Notificações pendentes: ${pendingNotifications.length}');
@@ -96,6 +125,26 @@ class NotificacoesService {
 
   void _onNotificationTapped(NotificationResponse notificationResponse) {
     print('👆 Notificação tocada: ${notificationResponse.payload}');
+
+    // Marcar como enviada quando a notificação for tocada
+    if (notificationResponse.payload != null) {
+      final payload = notificationResponse.payload!;
+      if (payload.startsWith('alimentacao_')) {
+        final alimentacaoId = payload.replaceFirst('alimentacao_', '');
+        print('🔍 Marcando notificação como enviada para alimentacao ID: $alimentacaoId');
+        _markNotificationAsSent(alimentacaoId);
+      }
+    }
+  }
+
+  Future<void> _markNotificationAsSent(String relatedId) async {
+    try {
+      print('🔍 Procurando notificação com related_id: $relatedId');
+      await _repository.markAsSentByRelatedId(relatedId);
+      print('✅ Notificação marcada como enviada para related_id: $relatedId');
+    } catch (e) {
+      print('❌ Erro ao marcar notificação como enviada: $e');
+    }
   }
 
   Future<void> scheduleAlimentacaoNotification({
@@ -115,15 +164,9 @@ class NotificacoesService {
       return;
     }
 
-    print('📅 Horário parseado: $scheduledTime');
-
     final DateTime notificationTime = scheduledTime.subtract(const Duration(minutes: 10));
 
-    print('⏰ Notificação agendada para: $notificationTime');
-    print('🌍 Timezone local: ${tz.local}');
-
     if (notificationTime.isBefore(DateTime.now())) {
-      print('⚠️ Horário da notificação é no passado, agendando para o próximo dia');
       final tomorrow = notificationTime.add(const Duration(days: 1));
       await _scheduleNotification(
         alimentacaoId: alimentacaoId,
@@ -165,27 +208,22 @@ class NotificacoesService {
       enableVibration: true,
       playSound: true,
       autoCancel: true,
-      fullScreenIntent: true,
       category: AndroidNotificationCategory.reminder,
-    );
-
-    const DarwinNotificationDetails iOSPlatformChannelSpecifics =
-    DarwinNotificationDetails(
-      sound: 'default',
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
+      visibility: NotificationVisibility.public,
     );
 
     const NotificationDetails platformChannelSpecifics = NotificationDetails(
       android: androidPlatformChannelSpecifics,
-      iOS: iOSPlatformChannelSpecifics,
     );
 
     final tz.TZDateTime scheduledDate = tz.TZDateTime.from(notificationTime, tz.local);
 
-    print('📅 Data agendada (TZDateTime): $scheduledDate');
-    print('🕐 Diferença para agora: ${scheduledDate.difference(tz.TZDateTime.now(tz.local))}');
+    final androidInfo = await DeviceInfoPlugin().androidInfo;
+    final sdkInt = androidInfo.version.sdkInt;
+
+    AndroidScheduleMode scheduleMode = sdkInt >= 31
+        ? AndroidScheduleMode.exactAllowWhileIdle
+        : AndroidScheduleMode.exact;
 
     try {
       await _flutterLocalNotificationsPlugin.zonedSchedule(
@@ -194,7 +232,7 @@ class NotificacoesService {
         'Em 10 minutos: $titulo - $alimento para $animalNome',
         scheduledDate,
         platformChannelSpecifics,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: scheduleMode,
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
         payload: 'alimentacao_$alimentacaoId',
         matchDateTimeComponents: null,
@@ -202,13 +240,13 @@ class NotificacoesService {
 
       print('✅ Notificação agendada com sucesso!');
       print('🆔 ID da notificação: ${alimentacaoId.hashCode}');
-
-      await _verifyScheduledNotification(alimentacaoId.hashCode);
+      print('📅 Horário agendado: $scheduledDate');
 
     } catch (e) {
       print('❌ Erro ao agendar notificação: $e');
     }
 
+    // Salvar no banco como agendada (sem sentTime)
     await _saveScheduledNotificacao(
       id: alimentacaoId,
       type: 'alimentacao',
@@ -219,61 +257,34 @@ class NotificacoesService {
       animalId: animalId,
     );
 
-    print('📊 Timestamp salvo no banco: ${notificationTime.millisecondsSinceEpoch}');
-  }
-
-  Future<void> _verifyScheduledNotification(int notificationId) async {
-    final pendingNotifications = await _flutterLocalNotificationsPlugin.pendingNotificationRequests();
-    final found = pendingNotifications.any((n) => n.id == notificationId);
-
-    if (found) {
-      print('✅ Notificação confirmada na lista de pendentes');
-    } else {
-      print('❌ Notificação NÃO encontrada na lista de pendentes!');
-    }
+    print('💾 Notificação salva no banco com related_id: $alimentacaoId');
   }
 
   DateTime? _parseHorarioToDateTime(String horario) {
     try {
-      print('🔍 Fazendo parse do horário: $horario');
-
       final parts = horario.split(': ');
-      if (parts.length != 2) {
-        print('❌ Formato inválido: esperado "Período: HH:MM"');
-        return null;
-      }
+      if (parts.length != 2) return null;
 
       final timePart = parts[1];
       final timeComponents = timePart.split(':');
-      if (timeComponents.length != 2) {
-        print('❌ Formato de hora inválido: esperado "HH:MM"');
-        return null;
-      }
+      if (timeComponents.length != 2) return null;
 
       final hour = int.parse(timeComponents[0]);
       final minute = int.parse(timeComponents[1]);
 
-      print('🕐 Hora extraída: ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}');
-
       final now = DateTime.now();
       DateTime scheduledTime = DateTime(now.year, now.month, now.day, hour, minute);
 
-      print('📅 Data/hora criada: $scheduledTime');
-      print('🕐 Agora: $now');
-
       if (scheduledTime.isBefore(now)) {
         scheduledTime = scheduledTime.add(const Duration(days: 1));
-        print('➡️ Horário ajustado para amanhã: $scheduledTime');
       }
 
       return scheduledTime;
     } catch (e) {
-      print('❌ Erro ao fazer parse do horário: $e');
       return null;
     }
   }
 
-  // MÉTODO PÚBLICO para teste em 10 segundos
   Future<void> testNotificationIn10Seconds() async {
     print('🧪 Agendando notificação de teste em 10 segundos...');
 
@@ -297,20 +308,40 @@ class NotificacoesService {
 
     final tz.TZDateTime scheduledDate = tz.TZDateTime.from(testTime, tz.local);
 
+    final androidInfo = await DeviceInfoPlugin().androidInfo;
+    final sdkInt = androidInfo.version.sdkInt;
+
+    AndroidScheduleMode scheduleMode = sdkInt >= 31
+        ? AndroidScheduleMode.exactAllowWhileIdle
+        : AndroidScheduleMode.exact;
+
     await _flutterLocalNotificationsPlugin.zonedSchedule(
       999,
       '🧪 Teste de Notificação',
       'Esta notificação foi agendada para testar o sistema!',
       scheduledDate,
       platformChannelSpecifics,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: scheduleMode,
       uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      payload: 'test_999',
     );
 
-    print('🧪 Notificação de teste agendada para: $testTime');
+    // Salvar notificação de teste no banco
+    final testNotificacao = NotificacoesModel(
+      id: 'test_999',
+      type: 'test',
+      title: '🧪 Teste de Notificação',
+      body: 'Esta notificação foi agendada para testar o sistema!',
+      scheduledTime: testTime,
+      relatedId: 'test_999',
+      animalId: 'test',
+      createdAt: DateTime.now(),
+    );
+
+    await _repository.save(testNotificacao);
+    print('🧪 Notificação de teste salva no banco');
   }
 
-  // MÉTODO PÚBLICO para notificação imediata
   Future<void> testImmediateNotification() async {
     print('🧪 Enviando notificação imediata...');
 
@@ -335,9 +366,24 @@ class NotificacoesService {
       '🧪 Teste Imediato',
       'Esta é uma notificação imediata para testar!',
       platformChannelSpecifics,
+      payload: 'immediate_998',
     );
 
-    print('🧪 Notificação imediata enviada!');
+    // Salvar no histórico como já enviada
+    final testNotificacao = NotificacoesModel(
+      id: 'immediate_998',
+      type: 'test',
+      title: '🧪 Teste Imediato',
+      body: 'Esta é uma notificação imediata para testar!',
+      scheduledTime: DateTime.now(),
+      sentTime: DateTime.now(), // Marcar como já enviada
+      relatedId: 'immediate_998',
+      animalId: 'test',
+      createdAt: DateTime.now(),
+    );
+
+    await _repository.save(testNotificacao);
+    print('🧪 Notificação imediata salva no histórico');
   }
 
   Future<void> cancelAlimentacaoNotification(String alimentacaoId) async {
@@ -354,18 +400,23 @@ class NotificacoesService {
     required String relatedId,
     required String animalId,
   }) async {
+    // Gerar um ID único para a notificação (diferente do ID da alimentação)
+    final notificacaoId = const Uuid().v4();
+
     final notificacao = NotificacoesModel(
-      id: id,
+      id: notificacaoId,  // ID único da notificação
       type: type,
       title: title,
       body: body,
       scheduledTime: scheduledTime,
-      relatedId: relatedId,
+      // sentTime: null, // Não definir sentTime - será definido quando a notificação for realmente enviada
+      relatedId: relatedId,  // ID da alimentação (relacionado)
       animalId: animalId,
       createdAt: DateTime.now(),
     );
 
     await _repository.save(notificacao);
+    print('💾 Notificação salva: ID=${notificacao.id}, RelatedID=${notificacao.relatedId}');
   }
 
   Future<void> markNotificacaoAsSent(String id) async {
