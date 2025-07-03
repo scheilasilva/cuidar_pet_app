@@ -36,7 +36,6 @@ class _NotificacoesPageState extends State<NotificacoesPage> {
 
       print('✅ ${notificacoes.length} notificações carregadas');
 
-      // Debug: mostrar detalhes das notificações
       for (var notif in notificacoes) {
         print('- ID: ${notif.id}');
         print('  RelatedID: ${notif.relatedId}');
@@ -73,6 +72,8 @@ class _NotificacoesPageState extends State<NotificacoesPage> {
         return 'Exame';
       case 'tratamento':
         return 'Tratamento';
+      case 'consulta':
+        return 'Consulta';
       case 'test':
         return 'Teste';
       default:
@@ -90,6 +91,8 @@ class _NotificacoesPageState extends State<NotificacoesPage> {
         return Icons.science;
       case 'tratamento':
         return Icons.medication;
+      case 'consulta':
+        return Icons.event_available;
       case 'test':
         return Icons.bug_report;
       default:
@@ -116,13 +119,11 @@ class _NotificacoesPageState extends State<NotificacoesPage> {
     final bool isScheduled = notificacao.sentTime == null;
     final bool isExpired = isScheduled && notificacao.scheduledTime.isBefore(DateTime.now());
 
-    // Extrair informações do body da notificação
     String subtitle = notificacao.body;
     if (notificacao.type == 'alimentacao' && notificacao.body.contains(' - ')) {
-      // Extrair apenas a parte da refeição (ex: "Manhã: 8:00 - Ração")
       final parts = notificacao.body.split(' - ');
       if (parts.length >= 2) {
-        subtitle = parts[1].split(' para ')[0]; // Remove a parte "para [nome do animal]"
+        subtitle = parts[1].split(' para ')[0];
       }
     }
 
@@ -148,7 +149,6 @@ class _NotificacoesPageState extends State<NotificacoesPage> {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                // Ícone circular
                 Container(
                   width: 40,
                   height: 40,
@@ -162,15 +162,11 @@ class _NotificacoesPageState extends State<NotificacoesPage> {
                     size: 20,
                   ),
                 ),
-
                 const SizedBox(width: 12),
-
-                // Conteúdo principal
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Título principal
                       Text(
                         _getNotificacaoTitle(notificacao.type),
                         style: const TextStyle(
@@ -179,10 +175,7 @@ class _NotificacoesPageState extends State<NotificacoesPage> {
                           color: Colors.black87,
                         ),
                       ),
-
                       const SizedBox(height: 2),
-
-                      // Subtítulo
                       Text(
                         subtitle,
                         style: TextStyle(
@@ -195,12 +188,9 @@ class _NotificacoesPageState extends State<NotificacoesPage> {
                     ],
                   ),
                 ),
-
-                // Lado direito - Status e indicadores
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    // Status badge
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
@@ -220,10 +210,7 @@ class _NotificacoesPageState extends State<NotificacoesPage> {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 4),
-
-                    // Tempo restante (apenas para agendadas)
                     if (isScheduled && !isExpired)
                       Text(
                         _formatTimeRemaining(notificacao.scheduledTime),
@@ -232,10 +219,7 @@ class _NotificacoesPageState extends State<NotificacoesPage> {
                           color: Colors.grey[500],
                         ),
                       ),
-
                     const SizedBox(height: 4),
-
-                    // Indicador de não lida
                     if (!notificacao.isRead)
                       Container(
                         width: 8,
@@ -292,8 +276,6 @@ class _NotificacoesPageState extends State<NotificacoesPage> {
         child: Column(
           children: [
             const SizedBox(height: 20),
-
-            // Header
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 20.0),
               child: Align(
@@ -308,16 +290,11 @@ class _NotificacoesPageState extends State<NotificacoesPage> {
                 ),
               ),
             ),
-
             const SizedBox(height: 16),
-
-            // Lista de notificações - fundo verde total
             Expanded(
               child: isLoading
                   ? const Center(
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                ),
+                child: CircularProgressIndicator(color: Colors.white),
               )
                   : notificacoes.isEmpty
                   ? Center(

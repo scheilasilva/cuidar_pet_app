@@ -1,6 +1,9 @@
 import 'package:cuidar_pet_app/app/modules/consulta/services/consulta_service_interface.dart';
 import 'package:cuidar_pet_app/app/modules/consulta/store/consulta_store.dart';
+import 'package:cuidar_pet_app/app/modules/notificacoes/services/notificacoes_service.dart';
+import 'package:cuidar_pet_app/app/modules/notificacoes/services/notificacoes_settings_service.dart';
 import 'package:mobx/mobx.dart';
+import 'package:uuid/uuid.dart';
 
 part 'consulta_controller.g.dart';
 
@@ -8,6 +11,8 @@ class ConsultaController = _ConsultaControllerBase with _$ConsultaController;
 
 abstract class _ConsultaControllerBase with Store {
   final IConsultaService _service;
+  final NotificacoesService _notificacoesService = NotificacoesService();
+  final NotificacoesSettingsService _settingsService = NotificacoesSettingsService();
 
   @observable
   ConsultaStore consulta = ConsultaStoreFactory.novo('');
@@ -61,8 +66,17 @@ abstract class _ConsultaControllerBase with Store {
   Future<void> salvarConsulta() async {
     if (animalSelecionadoId == null) return;
 
+    // Gerar ID se não existir
+    if (consulta.id.isEmpty) {
+      consulta.id = const Uuid().v4();
+    }
+
     consulta.animalId = animalSelecionadoId!;
     await _service.saveOrUpdate(consulta.toModel());
+
+    // Agendar notificação se estiver habilitada
+    await _scheduleNotificacaoIfEnabled(consulta);
+
     await loadConsultasByAnimal(animalSelecionadoId!);
     resetForm();
   }
@@ -73,6 +87,8 @@ abstract class _ConsultaControllerBase with Store {
     if (animalSelecionadoId == null) return;
 
     final novaConsulta = ConsultaStoreFactory.novo(animalSelecionadoId!);
+    // Gerar ID antes de salvar
+    novaConsulta.id = const Uuid().v4();
     novaConsulta.titulo = titulo;
     novaConsulta.descricao = descricao;
     novaConsulta.dataConsulta = data;
@@ -84,12 +100,18 @@ abstract class _ConsultaControllerBase with Store {
       await _service.saveOrUpdate(novaConsulta.toModel());
     }
 
+    // Agendar notificação se estiver habilitada
+    await _scheduleNotificacaoIfEnabled(novaConsulta);
+
     await loadConsultasByAnimal(animalSelecionadoId!);
   }
 
   // Excluir consulta específica
   @action
   Future<void> excluirConsulta(ConsultaStore consultaParaExcluir) async {
+    // Cancelar notificação agendada
+    await _notificacoesService.cancelConsultaNotification(consultaParaExcluir.id);
+
     await _service.delete(consultaParaExcluir.toModel());
     if (animalSelecionadoId != null) {
       await loadConsultasByAnimal(animalSelecionadoId!);
@@ -102,5 +124,31 @@ abstract class _ConsultaControllerBase with Store {
     if (animalSelecionadoId != null) {
       consulta = ConsultaStoreFactory.novo(animalSelecionadoId!);
     }
+  }
+
+  // Método privado para agendar notificação se habilitada
+  Future<void> _scheduleNotificacaoIfEnabled(ConsultaStore consulta) async {
+    final isEnabled = await _settingsService.isConsultaEnabled();
+    if (!isEnabled) return;
+
+    // Aqui você precisaria obter o nome do animal
+    // Assumindo que você tem acesso ao AnimalController ou pode buscar o nome
+    final animalNome = await _getAnimalNome(consulta.animalId);
+
+    await _notificacoesService.scheduleConsultaNotification(
+      consultaId: consulta.id,
+      titulo: consulta.titulo,
+      descricao: consulta.descricao,
+      dataConsulta: consulta.dataConsulta,
+      animalNome: animalNome,
+      animalId: consulta.animalId,
+    );
+  }
+
+  // Método para obter o nome do animal (você precisa implementar isso)
+  Future<String> _getAnimalNome(String animalId) async {
+    // Implementar busca do nome do animal pelo ID
+    // Por exemplo, usando o AnimalController ou um service
+    return 'Pet'; // Placeholder
   }
 }

@@ -137,6 +137,10 @@ class NotificacoesService {
         final vacinacaoId = payload.replaceFirst('vacinacao_', '');
         print('🔍 Marcando notificação como enviada para vacinacao ID: $vacinacaoId');
         _markNotificationAsSent(vacinacaoId);
+      } else if (payload.startsWith('consulta_')) {
+        final consultaId = payload.replaceFirst('consulta_', '');
+        print('🔍 Marcando notificação como enviada para consulta ID: $consultaId');
+        _markNotificationAsSent(consultaId);
       }
     }
   }
@@ -151,7 +155,7 @@ class NotificacoesService {
     }
   }
 
-  // ALIMENTAÇÃO - Método existente
+  // ALIMENTAÇÃO
   Future<void> scheduleAlimentacaoNotification({
     required String alimentacaoId,
     required String titulo,
@@ -264,7 +268,7 @@ class NotificacoesService {
     print('💾 Notificação de alimentação salva no banco com related_id: $alimentacaoId');
   }
 
-  // VACINAÇÃO - Método atualizado
+  // VACINAÇÃO
   Future<void> scheduleVacinacaoNotification({
     required String vacinacaoId,
     required String titulo,
@@ -279,7 +283,7 @@ class NotificacoesService {
     print('- Data: $dataVacinacao');
     print('- Animal: $animalNome');
 
-    final DateTime? scheduledDate = _parseDataVacinacaoToDateTime(dataVacinacao);
+    final DateTime? scheduledDate = _parseDataToDateTime(dataVacinacao);
 
     if (scheduledDate == null) {
       print('❌ Erro: Não foi possível fazer parse da data: $dataVacinacao');
@@ -395,6 +399,137 @@ class NotificacoesService {
     print('💾 Notificação de vacinação salva no banco com related_id: $vacinacaoId');
   }
 
+  // CONSULTA - IGUAL À VACINAÇÃO
+  Future<void> scheduleConsultaNotification({
+    required String consultaId,
+    required String titulo,
+    required String descricao,
+    required String dataConsulta,
+    required String animalNome,
+    required String animalId,
+  }) async {
+    print('🏥 Agendando notificação de consulta...');
+    print('- ID: $consultaId');
+    print('- Título: $titulo');
+    print('- Data: $dataConsulta');
+    print('- Animal: $animalNome');
+
+    final DateTime? scheduledDate = _parseDataToDateTime(dataConsulta);
+
+    if (scheduledDate == null) {
+      print('❌ Erro: Não foi possível fazer parse da data: $dataConsulta');
+      return;
+    }
+
+    print('📅 Data parseada: $scheduledDate');
+
+    // Agendar para 00:00:01 do dia da consulta
+    final DateTime notificationTime = DateTime(
+      scheduledDate.year,
+      scheduledDate.month,
+      scheduledDate.day,
+      0, // hora
+      0, // minuto
+      1, // segundo
+    );
+
+    print('⏰ Horário da notificação: $notificationTime');
+
+    if (notificationTime.isBefore(DateTime.now())) {
+      print('⚠️ Data da consulta já passou: $dataConsulta');
+      // Mesmo assim vamos salvar no banco para aparecer na lista
+      await _saveScheduledNotificacao(
+        type: 'consulta',
+        title: '🏥 Dia da consulta!',
+        body: '$titulo - $descricao para $animalNome',
+        scheduledTime: notificationTime,
+        relatedId: consultaId,
+        animalId: animalId,
+      );
+      print('💾 Notificação de consulta expirada salva no banco');
+      return;
+    }
+
+    await _scheduleConsultaNotification(
+      consultaId: consultaId,
+      titulo: titulo,
+      descricao: descricao,
+      animalNome: animalNome,
+      animalId: animalId,
+      notificationTime: notificationTime,
+    );
+  }
+
+  Future<void> _scheduleConsultaNotification({
+    required String consultaId,
+    required String titulo,
+    required String descricao,
+    required String animalNome,
+    required String animalId,
+    required DateTime notificationTime,
+  }) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+    AndroidNotificationDetails(
+      'consulta_channel',
+      'Consulta',
+      channelDescription: 'Notificações de consulta dos pets',
+      importance: Importance.max,
+      priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+      enableVibration: true,
+      playSound: true,
+      autoCancel: true,
+      category: AndroidNotificationCategory.reminder,
+      visibility: NotificationVisibility.public,
+    );
+
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+    );
+
+    final tz.TZDateTime scheduledDate = tz.TZDateTime.from(notificationTime, tz.local);
+
+    final androidInfo = await DeviceInfoPlugin().androidInfo;
+    final sdkInt = androidInfo.version.sdkInt;
+
+    AndroidScheduleMode scheduleMode = sdkInt >= 31
+        ? AndroidScheduleMode.exactAllowWhileIdle
+        : AndroidScheduleMode.exact;
+
+    try {
+      await _flutterLocalNotificationsPlugin.zonedSchedule(
+        consultaId.hashCode,
+        '🏥 Dia da consulta!',
+        '$titulo - $descricao para $animalNome',
+        scheduledDate,
+        platformChannelSpecifics,
+        androidScheduleMode: scheduleMode,
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        payload: 'consulta_$consultaId',
+        matchDateTimeComponents: null,
+      );
+
+      print('✅ Notificação de consulta agendada com sucesso!');
+      print('🆔 ID da notificação: ${consultaId.hashCode}');
+      print('📅 Horário agendado: $scheduledDate');
+
+    } catch (e) {
+      print('❌ Erro ao agendar notificação de consulta: $e');
+    }
+
+    // Salvar no banco como agendada (sem sentTime)
+    await _saveScheduledNotificacao(
+      type: 'consulta',
+      title: '🏥 Dia da consulta!',
+      body: '$titulo - $descricao para $animalNome',
+      scheduledTime: notificationTime,
+      relatedId: consultaId,
+      animalId: animalId,
+    );
+
+    print('💾 Notificação de consulta salva no banco com related_id: $consultaId');
+  }
+
   DateTime? _parseHorarioToDateTime(String horario) {
     try {
       final parts = horario.split(': ');
@@ -420,14 +555,14 @@ class NotificacoesService {
     }
   }
 
-  DateTime? _parseDataVacinacaoToDateTime(String dataVacinacao) {
+  DateTime? _parseDataToDateTime(String data) {
     try {
-      print('🔍 Fazendo parse da data: $dataVacinacao');
+      print('🔍 Fazendo parse da data: $data');
 
       // Assumindo formato dd/MM/yyyy
-      final parts = dataVacinacao.split('/');
+      final parts = data.split('/');
       if (parts.length != 3) {
-        print('❌ Formato de data inválido: $dataVacinacao');
+        print('❌ Formato de data inválido: $data');
         return null;
       }
 
@@ -440,7 +575,7 @@ class NotificacoesService {
 
       return parsedDate;
     } catch (e) {
-      print('❌ Erro ao fazer parse da data: $dataVacinacao - $e');
+      print('❌ Erro ao fazer parse da data: $data - $e');
       return null;
     }
   }
@@ -556,6 +691,11 @@ class NotificacoesService {
     await _repository.deleteByRelatedId(vacinacaoId);
   }
 
+  Future<void> cancelConsultaNotification(String consultaId) async {
+    await _flutterLocalNotificationsPlugin.cancel(consultaId.hashCode);
+    await _repository.deleteByRelatedId(consultaId);
+  }
+
   Future<void> _saveScheduledNotificacao({
     required String type,
     required String title,
@@ -564,7 +704,7 @@ class NotificacoesService {
     required String relatedId,
     required String animalId,
   }) async {
-    // Gerar um ID único para a notificação (diferente do ID da alimentação/vacinação)
+    // Gerar um ID único para a notificação (diferente do ID da alimentação/vacinação/consulta)
     final notificacaoId = const Uuid().v4();
 
     final notificacao = NotificacoesModel(
@@ -574,7 +714,7 @@ class NotificacoesService {
       body: body,
       scheduledTime: scheduledTime,
       // sentTime: null, // Não definir sentTime - será definido quando a notificação for realmente enviada
-      relatedId: relatedId,  // ID da alimentação/vacinação (relacionado)
+      relatedId: relatedId,  // ID da alimentação/vacinação/consulta (relacionado)
       animalId: animalId,
       createdAt: DateTime.now(),
     );

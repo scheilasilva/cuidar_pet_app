@@ -3,10 +3,11 @@ import 'package:cuidar_pet_app/app/shared/services/auth_service.dart';
 import 'package:cuidar_pet_app/app/shared/url/url_launcher.dart';
 import 'package:cuidar_pet_app/app/shared/widget/bottom_sheet_exit/bottom_sheet_exit.dart';
 import 'package:cuidar_pet_app/app/shared/widget/bottom_sheet_info/bottom_sheet_info.dart';
-import 'package:cuidar_pet_app/app/shared/widget/bottom_sheet_notificacoes/bottom_sheet_notificacoes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:oktoast/oktoast.dart';
+
+import '../../shared/widget/bottom_sheet_notificacoes/bottom_sheet_notificacoes.dart';
 
 class AjustesPage extends StatefulWidget {
   const AjustesPage({super.key});

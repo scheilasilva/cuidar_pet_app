@@ -1,49 +1,49 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificacoesSettingsService {
-  static const String _keyAlimentacao = 'notificacoes_alimentacao_enabled';
-  static const String _keyVacinacao = 'notificacoes_vacinacao_enabled';
-  static const String _keyConsulta = 'notificacoes_consulta_enabled';
+  static const String _alimentacaoKey = 'notificacoes_alimentacao_enabled';
+  static const String _vacinacaoKey = 'notificacoes_vacinacao_enabled';
+  static const String _consultaKey = 'notificacoes_consulta_enabled';
   static const String _keyExame = 'notificacoes_exame_enabled';
   static const String _keyTratamento = 'notificacoes_tratamento_enabled';
 
-  // ALIMENTAÇÃO
+  // Alimentação
   Future<bool> isAlimentacaoEnabled() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_keyAlimentacao) ?? true; // Habilitado por padrão
+    return prefs.getBool(_alimentacaoKey) ?? true;
   }
 
   Future<void> setAlimentacaoEnabled(bool enabled) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_keyAlimentacao, enabled);
+    await prefs.setBool(_alimentacaoKey, enabled);
   }
 
-  // VACINAÇÃO
+  // Vacinação
   Future<bool> isVacinacaoEnabled() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_keyVacinacao) ?? true; // Habilitado por padrão
+    return prefs.getBool(_vacinacaoKey) ?? true;
   }
 
   Future<void> setVacinacaoEnabled(bool enabled) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_keyVacinacao, enabled);
+    await prefs.setBool(_vacinacaoKey, enabled);
   }
 
-  // CONSULTA
+  // Consulta
   Future<bool> isConsultaEnabled() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_keyConsulta) ?? true; // Habilitado por padrão
+    return prefs.getBool(_consultaKey) ?? true;
   }
 
   Future<void> setConsultaEnabled(bool enabled) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_keyConsulta, enabled);
+    await prefs.setBool(_consultaKey, enabled);
   }
 
-  // EXAME
+  // Exame
   Future<bool> isExameEnabled() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_keyExame) ?? true; // Habilitado por padrão
+    return prefs.getBool(_keyExame) ?? true;
   }
 
   Future<void> setExameEnabled(bool enabled) async {
@@ -51,10 +51,10 @@ class NotificacoesSettingsService {
     await prefs.setBool(_keyExame, enabled);
   }
 
-  // TRATAMENTO
+  // Tratamento
   Future<bool> isTratamentoEnabled() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_keyTratamento) ?? true; // Habilitado por padrão
+    return prefs.getBool(_keyTratamento) ?? true;
   }
 
   Future<void> setTratamentoEnabled(bool enabled) async {
@@ -62,7 +62,7 @@ class NotificacoesSettingsService {
     await prefs.setBool(_keyTratamento, enabled);
   }
 
-  // Método para obter todas as configurações
+  // Obter todas as configurações
   Future<Map<String, bool>> getAllSettings() async {
     return {
       'alimentacao': await isAlimentacaoEnabled(),
@@ -73,7 +73,7 @@ class NotificacoesSettingsService {
     };
   }
 
-  // Método para habilitar/desabilitar todas as notificações
+  // Habilitar/desabilitar todas as notificações
   Future<void> setAllEnabled(bool enabled) async {
     await setAlimentacaoEnabled(enabled);
     await setVacinacaoEnabled(enabled);
