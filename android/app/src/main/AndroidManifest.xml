@@ -20,7 +20,7 @@
         android:minSdkVersion="33" />
 
     <application
-        android:label="cuidar_pet_app"
+        android:label="CuidarPet"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 

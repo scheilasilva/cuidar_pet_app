@@ -1,7 +1,6 @@
-import 'package:cuidar_pet_app/app/modules/notificacoes/models/notificacoes_model.dart';
 import 'package:cuidar_pet_app/app/shared/databases/database_local_pets.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:uuid/uuid.dart';
+import '../models/notificacoes_model.dart';
 
 class NotificacoesRepository {
   final DatabaseLocalPets _databaseLocal = DatabaseLocalPets();
@@ -11,13 +10,12 @@ class NotificacoesRepository {
     batch.execute('''
       CREATE TABLE $_tableName (
         id TEXT PRIMARY KEY,
+        related_id TEXT NOT NULL,
         type TEXT NOT NULL,
         title TEXT NOT NULL,
         body TEXT NOT NULL,
         scheduled_time INTEGER NOT NULL,
         sent_time INTEGER,
-        related_id TEXT NOT NULL,
-        animal_id TEXT NOT NULL,
         is_read INTEGER NOT NULL DEFAULT 0,
         created_at INTEGER NOT NULL
       );
@@ -28,29 +26,25 @@ class NotificacoesRepository {
     final db = await _databaseLocal.getDb();
     final List<Map<String, dynamic>> maps = await db.query(
       _tableName,
-      orderBy: 'created_at DESC',
+      orderBy: 'scheduled_time DESC',
     );
 
     return List.generate(maps.length, (i) => _fromMap(maps[i]));
   }
 
-  Future<List<NotificacoesModel>> getSentNotificacoes() async {
+  Future<List<NotificacoesModel>> getByType(String type) async {
     final db = await _databaseLocal.getDb();
     final List<Map<String, dynamic>> maps = await db.query(
       _tableName,
-      where: 'sent_time IS NOT NULL',
-      orderBy: 'sent_time DESC',
+      where: 'type = ?',
+      whereArgs: [type],
+      orderBy: 'scheduled_time DESC',
     );
-
-    print('📊 Notificações enviadas encontradas: ${maps.length}');
-    for (var map in maps) {
-      print('- ID: ${map['id']}, Related ID: ${map['related_id']}, Título: ${map['title']}');
-    }
 
     return List.generate(maps.length, (i) => _fromMap(maps[i]));
   }
 
-  Future<List<NotificacoesModel>> getScheduledNotificacoes() async {
+  Future<List<NotificacoesModel>> getPending() async {
     final db = await _databaseLocal.getDb();
     final List<Map<String, dynamic>> maps = await db.query(
       _tableName,
@@ -64,29 +58,21 @@ class NotificacoesRepository {
 
   Future<void> save(NotificacoesModel notificacao) async {
     final db = await _databaseLocal.getDb();
-
-    if (notificacao.id.isEmpty) {
-      notificacao.id = const Uuid().v4();
-    }
-
     await db.insert(
       _tableName,
       _toMap(notificacao),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
-
-    print('💾 Notificação salva: ID=${notificacao.id}, RelatedID=${notificacao.relatedId}');
   }
 
   Future<void> markAsSent(String id) async {
     final db = await _databaseLocal.getDb();
-    final result = await db.update(
+    await db.update(
       _tableName,
       {'sent_time': DateTime.now().millisecondsSinceEpoch},
       where: 'id = ?',
       whereArgs: [id],
     );
-    print('📝 Notificação marcada como enviada por ID: $id (linhas afetadas: $result)');
   }
 
   Future<void> markAsSentByRelatedId(String relatedId) async {
@@ -128,9 +114,28 @@ class NotificacoesRepository {
     );
   }
 
+  // Novo método para limpar todas as notificações
+  Future<void> clearAll() async {
+    final db = await _databaseLocal.getDb();
+    await db.delete(_tableName);
+  }
+
+  // Método para limpar notificações antigas (opcional)
+  Future<void> clearOldNotifications({int daysOld = 30}) async {
+    final db = await _databaseLocal.getDb();
+    final cutoffDate = DateTime.now().subtract(Duration(days: daysOld));
+
+    await db.delete(
+      _tableName,
+      where: 'created_at < ? AND sent_time IS NOT NULL',
+      whereArgs: [cutoffDate.millisecondsSinceEpoch],
+    );
+  }
+
   NotificacoesModel _fromMap(Map<String, dynamic> map) {
     return NotificacoesModel(
       id: map['id'] ?? '',
+      relatedId: map['related_id'] ?? '',
       type: map['type'] ?? '',
       title: map['title'] ?? '',
       body: map['body'] ?? '',
@@ -138,9 +143,8 @@ class NotificacoesRepository {
       sentTime: map['sent_time'] != null
           ? DateTime.fromMillisecondsSinceEpoch(map['sent_time'])
           : null,
-      relatedId: map['related_id'] ?? '',
-      animalId: map['animal_id'] ?? '',
       isRead: (map['is_read'] ?? 0) == 1,
+      animalId: map['animal_id'] ?? '',
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['created_at'] ?? 0),
     );
   }
@@ -148,13 +152,12 @@ class NotificacoesRepository {
   Map<String, dynamic> _toMap(NotificacoesModel notificacao) {
     return {
       'id': notificacao.id,
+      'related_id': notificacao.relatedId,
       'type': notificacao.type,
       'title': notificacao.title,
       'body': notificacao.body,
       'scheduled_time': notificacao.scheduledTime.millisecondsSinceEpoch,
       'sent_time': notificacao.sentTime?.millisecondsSinceEpoch,
-      'related_id': notificacao.relatedId,
-      'animal_id': notificacao.animalId,
       'is_read': notificacao.isRead ? 1 : 0,
       'created_at': notificacao.createdAt.millisecondsSinceEpoch,
     };

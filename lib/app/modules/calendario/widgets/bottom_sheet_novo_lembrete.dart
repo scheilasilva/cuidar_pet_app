@@ -29,7 +29,12 @@ class _BottomSheetNovoLembreteState extends State<BottomSheetNovoLembrete> {
   @override
   void initState() {
     super.initState();
-    _dataSelecionada = widget.dataSelecionada;
+    // Normalizar a data selecionada para evitar problemas de fuso horário
+    _dataSelecionada = DateTime(
+      widget.dataSelecionada.year,
+      widget.dataSelecionada.month,
+      widget.dataSelecionada.day,
+    );
   }
 
   bool get _isFormValid {
@@ -40,10 +45,20 @@ class _BottomSheetNovoLembreteState extends State<BottomSheetNovoLembrete> {
 
   void _salvar() {
     if (_isFormValid && widget.onSalvar != null) {
+      // Garantir que a data seja normalizada antes de salvar
+      final dataNormalizada = DateTime(
+        _dataSelecionada.year,
+        _dataSelecionada.month,
+        _dataSelecionada.day,
+        12, // Definir meio-dia para evitar problemas de fuso horário
+        0,
+        0,
+      );
+
       widget.onSalvar!(
         _tituloController.text,
         _descricaoController.text,
-        _dataSelecionada,
+        dataNormalizada,
         _categoriaSelecionada!,
         _concluido,
       );
@@ -70,7 +85,8 @@ class _BottomSheetNovoLembreteState extends State<BottomSheetNovoLembrete> {
     );
     if (picked != null && picked != _dataSelecionada) {
       setState(() {
-        _dataSelecionada = picked;
+        // Normalizar a data selecionada
+        _dataSelecionada = DateTime(picked.year, picked.month, picked.day);
       });
     }
   }
@@ -192,7 +208,7 @@ class _BottomSheetNovoLembreteState extends State<BottomSheetNovoLembrete> {
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children:
-                          CategoriaHelper.getTodasCategorias().map((categoria) {
+                      CategoriaHelper.getTodasCategorias().map((categoria) {
                         final isSelected = _categoriaSelecionada == categoria;
                         return Padding(
                           padding: const EdgeInsets.only(right: 12),
@@ -207,7 +223,7 @@ class _BottomSheetNovoLembreteState extends State<BottomSheetNovoLembrete> {
                               height: 60,
                               decoration: BoxDecoration(
                                 color:
-                                    CategoriaHelper.getCorCategoria(categoria),
+                                CategoriaHelper.getCorCategoria(categoria),
                                 shape: BoxShape.circle,
                                 border: isSelected
                                     ? Border.all(color: Colors.black, width: 3)

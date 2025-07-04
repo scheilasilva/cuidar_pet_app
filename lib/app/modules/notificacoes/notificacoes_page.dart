@@ -62,6 +62,97 @@ class _NotificacoesPageState extends State<NotificacoesPage> {
     }
   }
 
+  Future<void> _showClearAllDialog() async {
+    if (notificacoes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Não há notificações para limpar'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmar exclusão'),
+          content: Text('Tem certeza que deseja limpar todas as ${notificacoes.length} notificações?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _clearAllNotifications();
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Limpar tudo'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _clearAllNotifications() async {
+    try {
+      setState(() {
+        isLoading = true;
+      });
+
+      await _repository.clearAll();
+
+      setState(() {
+        notificacoes.clear();
+        isLoading = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Todas as notificações foram removidas'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+
+      print('✅ Todas as notificações foram removidas');
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 8),
+                Text('Erro ao limpar notificações: $e'),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+
+      print('❌ Erro ao limpar notificações: $e');
+    }
+  }
+
   String _getNotificacaoTitle(String type) {
     switch (type) {
       case 'alimentacao':
@@ -271,25 +362,65 @@ class _NotificacoesPageState extends State<NotificacoesPage> {
             },
           ),
         ),
+        actions: [
+          Visibility(
+            visible: notificacoes.isNotEmpty,
+            child: Container(
+              margin: const EdgeInsets.all(8.0),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(
+                  Icons.clear,
+                  color: Color(0xFF00845A),
+                  size: 24,
+                ),
+                onPressed: _showClearAllDialog,
+                tooltip: 'Limpar todas as notificações',
+              ),
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
           children: [
             const SizedBox(height: 20),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.0),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Últimas notificações',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Últimas notificações',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
+                  if (notificacoes.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${notificacoes.length} ${notificacoes.length == 1 ? 'item' : 'itens'}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
+            SizedBox(height: 6),
             Expanded(
               child: isLoading
                   ? const Center(

@@ -4,6 +4,7 @@ import 'package:cuidar_pet_app/app/modules/notificacoes/services/notificacoes_se
 import 'package:cuidar_pet_app/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
 void main() async {
@@ -11,6 +12,10 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
 
   // Inicializar o serviço de notificações
   await NotificacoesService().initialize();

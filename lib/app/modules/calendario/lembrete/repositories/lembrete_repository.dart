@@ -52,9 +52,12 @@ class LembreteRepository implements ILembreteRepository {
   Future<List<LembreteModel>> getByDate(DateTime date, String animalId) async {
     final db = await _databaseLocal.getDb();
 
-    // Início e fim do dia
-    final startOfDay = DateTime(date.year, date.month, date.day);
-    final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
+    // Normalizar a data para o horário local sem considerar fuso horário
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+
+    // Início e fim do dia em horário local
+    final startOfDay = DateTime(normalizedDate.year, normalizedDate.month, normalizedDate.day, 0, 0, 0);
+    final endOfDay = DateTime(normalizedDate.year, normalizedDate.month, normalizedDate.day, 23, 59, 59, 999);
 
     final List<Map<String, dynamic>> maps = await db.query(
       _tableName,
@@ -128,20 +131,31 @@ class LembreteRepository implements ILembreteRepository {
       animalId: map['animal_id'] ?? '',
       titulo: map['titulo'] ?? '',
       descricao: map['descricao'] ?? '',
-      dataLembrete: DateTime.fromMillisecondsSinceEpoch(map['data_lembrete'] ?? 0),
+      // Garantir que a data seja interpretada no horário local
+      dataLembrete: DateTime.fromMillisecondsSinceEpoch(map['data_lembrete'] ?? 0, isUtc: false),
       categoria: map['categoria'] ?? '',
       concluido: (map['concluido'] ?? 0) == 1,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(map['created_at'] ?? 0),
+      createdAt: DateTime.fromMillisecondsSinceEpoch(map['created_at'] ?? 0, isUtc: false),
     );
   }
 
   Map<String, dynamic> _toMap(LembreteModel lembrete) {
+    // Normalizar a data do lembrete para garantir que seja salva corretamente
+    final normalizedDataLembrete = DateTime(
+      lembrete.dataLembrete.year,
+      lembrete.dataLembrete.month,
+      lembrete.dataLembrete.day,
+      12, // Definir meio-dia para evitar problemas de fuso horário
+      0,
+      0,
+    );
+
     return {
       'id': lembrete.id,
       'animal_id': lembrete.animalId,
       'titulo': lembrete.titulo,
       'descricao': lembrete.descricao,
-      'data_lembrete': lembrete.dataLembrete.millisecondsSinceEpoch,
+      'data_lembrete': normalizedDataLembrete.millisecondsSinceEpoch,
       'categoria': lembrete.categoria,
       'concluido': lembrete.concluido ? 1 : 0,
       'created_at': lembrete.createdAt.millisecondsSinceEpoch,

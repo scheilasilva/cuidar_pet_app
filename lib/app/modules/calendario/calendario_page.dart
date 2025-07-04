@@ -25,10 +25,13 @@ class _CalendarioPageState extends State<CalendarioPage> {
   @override
   void initState() {
     super.initState();
-    _initializeWithSelectedAnimal();
+    // Aguardar um frame antes de inicializar para garantir que tudo esteja pronto
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeWithSelectedAnimal();
+    });
   }
 
-  void _initializeWithSelectedAnimal() {
+  void _initializeWithSelectedAnimal() async {
     // Usar o animal selecionado do carrossel
     if (animalController.animalSelecionadoCarrossel != null) {
       controller.setAnimalSelecionado(animalController.animalSelecionadoCarrossel!.id);
@@ -37,6 +40,9 @@ class _CalendarioPageState extends State<CalendarioPage> {
       animalController.setAnimalSelecionadoCarrossel(0);
       controller.setAnimalSelecionado(animalController.animais.first.id);
     }
+
+    // Garantir que a data atual seja definida
+    controller.setDataSelecionada(DateTime.now());
   }
 
   void _showNovoLembrete() {
@@ -124,58 +130,66 @@ class _CalendarioPageState extends State<CalendarioPage> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Observer(
-                  builder: (_) => TableCalendar(
-                    firstDay: DateTime.utc(2020, 1, 1),
-                    lastDay: DateTime.utc(2030, 12, 31),
-                    focusedDay: _focusedDay,
-                    calendarFormat: _calendarFormat,
-                    selectedDayPredicate: (day) {
-                      return isSameDay(controller.dataSelecionada, day);
-                    },
-                    onDaySelected: (selectedDay, focusedDay) {
-                      setState(() {
+                  builder: (_) {
+                    // Forçar rebuild quando o trigger mudar
+                    controller.calendarRebuildTrigger;
+
+                    return TableCalendar(
+                      firstDay: DateTime.utc(2020, 1, 1),
+                      lastDay: DateTime.utc(2030, 12, 31),
+                      focusedDay: _focusedDay,
+                      calendarFormat: _calendarFormat,
+                      selectedDayPredicate: (day) {
+                        return isSameDay(controller.dataSelecionada, day);
+                      },
+                      onDaySelected: (selectedDay, focusedDay) {
+                        setState(() {
+                          _focusedDay = focusedDay;
+                        });
+                        controller.setDataSelecionada(selectedDay);
+                      },
+                      onFormatChanged: (format) {
+                        setState(() {
+                          _calendarFormat = format;
+                        });
+                      },
+                      onPageChanged: (focusedDay) {
                         _focusedDay = focusedDay;
-                      });
-                      controller.setDataSelecionada(selectedDay);
-                    },
-                    onFormatChanged: (format) {
-                      setState(() {
-                        _calendarFormat = format;
-                      });
-                    },
-                    onPageChanged: (focusedDay) {
-                      _focusedDay = focusedDay;
-                    },
-                    eventLoader: (day) {
-                      // Mostrar indicador se há lembretes neste dia
-                      return controller.hasLembretesForDate(day) ? ['lembrete'] : [];
-                    },
-                    headerStyle: const HeaderStyle(
-                      formatButtonVisible: false,
-                      titleCentered: false,
-                      leftChevronIcon: Icon(Icons.chevron_left, color: Colors.black54),
-                      rightChevronIcon: Icon(Icons.chevron_right, color: Colors.black54),
-                      titleTextStyle: TextStyle(fontSize: 16),
-                      headerPadding: EdgeInsets.symmetric(vertical: 4.0, horizontal: 16.0),
-                    ),
-                    calendarStyle: CalendarStyle(
-                      todayDecoration: BoxDecoration(
-                        color: const Color(0xFF00845A).withOpacity(0.3),
-                        shape: BoxShape.circle,
+                      },
+                      eventLoader: (day) {
+                        // Mostrar indicador se há lembretes neste dia
+                        return controller.hasLembretesForDate(day) ? ['lembrete'] : [];
+                      },
+                      headerStyle: const HeaderStyle(
+                        formatButtonVisible: false,
+                        titleCentered: false,
+                        leftChevronIcon: Icon(Icons.chevron_left, color: Colors.black54),
+                        rightChevronIcon: Icon(Icons.chevron_right, color: Colors.black54),
+                        titleTextStyle: TextStyle(fontSize: 16),
+                        headerPadding: EdgeInsets.symmetric(vertical: 4.0, horizontal: 16.0),
                       ),
-                      selectedDecoration: const BoxDecoration(
-                        color: Color(0xFF00845A),
-                        shape: BoxShape.circle,
+                      calendarStyle: CalendarStyle(
+                        todayDecoration: BoxDecoration(
+                          color: const Color(0xFF00845A).withOpacity(0.3),
+                          shape: BoxShape.circle,
+                        ),
+                        selectedDecoration: const BoxDecoration(
+                          color: Color(0xFF00845A),
+                          shape: BoxShape.circle,
+                        ),
+                        weekendTextStyle: const TextStyle(color: Colors.red),
+                        outsideDaysVisible: true,
+                        outsideTextStyle: const TextStyle(color: Colors.grey),
+                        markerDecoration: const BoxDecoration(
+                          color: Color(0xFF00845A),
+                          shape: BoxShape.circle,
+                        ),
+                        markerSize: 6.0,
+                        markersMaxCount: 3,
+                        canMarkersOverflow: true,
                       ),
-                      weekendTextStyle: const TextStyle(color: Colors.red),
-                      outsideDaysVisible: true,
-                      outsideTextStyle: const TextStyle(color: Colors.grey),
-                      markerDecoration: const BoxDecoration(
-                        color: Color(0xFF00845A),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ),
 

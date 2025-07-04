@@ -27,6 +27,13 @@ abstract class _CalendarioControllerBase with Store {
   @observable
   bool isLoading = false;
 
+  // Adicionar uma propriedade observável para forçar rebuild do calendário
+  @observable
+  int _calendarRebuildTrigger = 0;
+
+  // Adicionar getter para acessar o trigger
+  int get calendarRebuildTrigger => _calendarRebuildTrigger;
+
   _CalendarioControllerBase(this._service);
 
   @computed
@@ -50,9 +57,10 @@ abstract class _CalendarioControllerBase with Store {
   // Definir data selecionada
   @action
   void setDataSelecionada(DateTime data) {
-    dataSelecionada = data;
+    // Normalizar a data selecionada
+    dataSelecionada = DateTime(data.year, data.month, data.day);
     if (animalSelecionadoId != null) {
-      loadLembretesByDate(data, animalSelecionadoId!);
+      loadLembretesByDate(dataSelecionada, animalSelecionadoId!);
     }
   }
 
@@ -67,6 +75,9 @@ abstract class _CalendarioControllerBase with Store {
       for (var lembrete in list) {
         lembretes.add(LembreteStoreFactory.fromModel(lembrete));
       }
+
+      // Forçar rebuild do calendário após carregar lembretes
+      _calendarRebuildTrigger++;
     } finally {
       isLoading = false;
     }
@@ -76,7 +87,9 @@ abstract class _CalendarioControllerBase with Store {
   @action
   Future<void> loadLembretesByDate(DateTime data, String animalId) async {
     try {
-      final list = await _service.getByDate(data, animalId);
+      // Normalizar a data antes de buscar
+      final dataNormalizada = DateTime(data.year, data.month, data.day);
+      final list = await _service.getByDate(dataNormalizada, animalId);
       lembretesDataSelecionada.clear();
 
       for (var lembrete in list) {
@@ -84,6 +97,7 @@ abstract class _CalendarioControllerBase with Store {
       }
     } catch (e) {
       // Tratar erro se necessário
+      print('Erro ao carregar lembretes por data: $e');
     }
   }
 
@@ -92,16 +106,22 @@ abstract class _CalendarioControllerBase with Store {
   Future<void> criarLembrete(String titulo, String descricao, DateTime data, String categoria, bool concluido) async {
     if (animalSelecionadoId == null) return;
 
-    final novoLembrete = LembreteStoreFactory.novo(animalSelecionadoId!, data);
+    // Normalizar a data do lembrete
+    final dataNormalizada = DateTime(data.year, data.month, data.day, 12, 0, 0);
+
+    final novoLembrete = LembreteStoreFactory.novo(animalSelecionadoId!, dataNormalizada);
     novoLembrete.titulo = titulo;
     novoLembrete.descricao = descricao;
-    novoLembrete.dataLembrete = data;
+    novoLembrete.dataLembrete = dataNormalizada;
     novoLembrete.categoria = categoria;
     novoLembrete.concluido = concluido;
 
     await _service.saveOrUpdate(novoLembrete.toModel());
     await loadLembretesByAnimal(animalSelecionadoId!);
     await loadLembretesByDate(dataSelecionada, animalSelecionadoId!);
+
+    // Forçar rebuild do calendário
+    _calendarRebuildTrigger++;
   }
 
   // Marcar lembrete como concluído
@@ -114,6 +134,9 @@ abstract class _CalendarioControllerBase with Store {
       await loadLembretesByAnimal(animalSelecionadoId!);
       await loadLembretesByDate(dataSelecionada, animalSelecionadoId!);
     }
+
+    // Forçar rebuild do calendário
+    _calendarRebuildTrigger++;
   }
 
   // Excluir lembrete específico
@@ -124,6 +147,9 @@ abstract class _CalendarioControllerBase with Store {
       await loadLembretesByAnimal(animalSelecionadoId!);
       await loadLembretesByDate(dataSelecionada, animalSelecionadoId!);
     }
+
+    // Forçar rebuild do calendário
+    _calendarRebuildTrigger++;
   }
 
   // Resetar formulário
@@ -136,10 +162,16 @@ abstract class _CalendarioControllerBase with Store {
 
   // Verificar se uma data tem lembretes
   bool hasLembretesForDate(DateTime date) {
-    return lembretes.any((lembrete) =>
-    lembrete.dataLembrete.year == date.year &&
-        lembrete.dataLembrete.month == date.month &&
-        lembrete.dataLembrete.day == date.day
-    );
+    // Normalizar a data para comparação
+    final dataNormalizada = DateTime(date.year, date.month, date.day);
+
+    return lembretes.any((lembrete) {
+      final lembreteData = DateTime(
+        lembrete.dataLembrete.year,
+        lembrete.dataLembrete.month,
+        lembrete.dataLembrete.day,
+      );
+      return lembreteData.isAtSameMomentAs(dataNormalizada);
+    });
   }
 }
