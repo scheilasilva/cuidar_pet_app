@@ -26,12 +26,11 @@ class _ConsultaPageState extends State<ConsultaPage> {
   }
 
   void _initializeWithSelectedAnimal() {
-    // Usar o animal selecionado do carrossel
     if (animalController.animalSelecionadoCarrossel != null) {
-      controller.setAnimalSelecionado(animalController.animalSelecionadoCarrossel!.id,
+      controller.setAnimalSelecionado(
+          animalController.animalSelecionadoCarrossel!.id,
           animalController.animalSelecionadoCarrossel!.nome);
     } else if (animalController.animais.isNotEmpty) {
-      // Fallback: definir o primeiro animal como selecionado
       animalController.setAnimalSelecionadoCarrossel(0);
       controller.setAnimalSelecionado(animalController.animais.first.id,
           animalController.animais.first.nome);
@@ -86,14 +85,27 @@ class _ConsultaPageState extends State<ConsultaPage> {
             labelCampo2: 'Descrição da consulta',
             labelCampo3: 'Data da consulta',
             onSalvar: (titulo, descricao, data, imagem) async {
-              await controller.criarConsulta(titulo, descricao, data, imagem!);
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Consulta cadastrada com sucesso!'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
+              try {
+                // ✅ Usar o método criarConsulta que aceita imagem null
+                await controller.criarConsulta(titulo, descricao, data, imagem);
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Consulta cadastrada com sucesso!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Erro ao cadastrar consulta: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
             },
           ),
@@ -191,7 +203,7 @@ class _ConsultaPageState extends State<ConsultaPage> {
               ),
             ),
 
-            // Lista de consultas - Cards diretamente no fundo verde
+            // Lista de consultas
             Expanded(
               child: Observer(
                 builder: (_) {

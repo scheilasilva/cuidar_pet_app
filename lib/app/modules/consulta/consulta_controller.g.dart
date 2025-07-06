@@ -126,6 +126,17 @@ mixin _$ConsultaController on _ConsultaControllerBase, Store {
         .run(() => super.criarConsulta(titulo, descricao, data, imagem));
   }
 
+  late final _$criarConsultaComImagemAsyncAction = AsyncAction(
+      '_ConsultaControllerBase.criarConsultaComImagem',
+      context: context);
+
+  @override
+  Future<void> criarConsultaComImagem(
+      String titulo, String descricao, String data, String imagePath) {
+    return _$criarConsultaComImagemAsyncAction.run(
+        () => super.criarConsultaComImagem(titulo, descricao, data, imagePath));
+  }
+
   late final _$excluirConsultaAsyncAction =
       AsyncAction('_ConsultaControllerBase.excluirConsulta', context: context);
 

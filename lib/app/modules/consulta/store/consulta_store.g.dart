@@ -9,6 +9,14 @@ part of 'consulta_store.dart';
 // ignore_for_file: non_constant_identifier_names, unnecessary_brace_in_string_interps, unnecessary_lambdas, prefer_expression_function_bodies, lines_longer_than_80_chars, avoid_as, avoid_annotating_with_dynamic, no_leading_underscores_for_local_identifiers
 
 mixin _$ConsultaStore on _ConsultaStoreBase, Store {
+  Computed<bool>? _$isFormValidComputed;
+
+  @override
+  bool get isFormValid =>
+      (_$isFormValidComputed ??= Computed<bool>(() => super.isFormValid,
+              name: '_ConsultaStoreBase.isFormValid'))
+          .value;
+
   late final _$idAtom = Atom(name: '_ConsultaStoreBase.id', context: context);
 
   @override
@@ -136,6 +144,53 @@ mixin _$ConsultaStore on _ConsultaStoreBase, Store {
     });
   }
 
+  late final _$_ConsultaStoreBaseActionController =
+      ActionController(name: '_ConsultaStoreBase', context: context);
+
+  @override
+  void setTitulo(String value) {
+    final _$actionInfo = _$_ConsultaStoreBaseActionController.startAction(
+        name: '_ConsultaStoreBase.setTitulo');
+    try {
+      return super.setTitulo(value);
+    } finally {
+      _$_ConsultaStoreBaseActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
+  void setDescricao(String value) {
+    final _$actionInfo = _$_ConsultaStoreBaseActionController.startAction(
+        name: '_ConsultaStoreBase.setDescricao');
+    try {
+      return super.setDescricao(value);
+    } finally {
+      _$_ConsultaStoreBaseActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
+  void setDataConsulta(String value) {
+    final _$actionInfo = _$_ConsultaStoreBaseActionController.startAction(
+        name: '_ConsultaStoreBase.setDataConsulta');
+    try {
+      return super.setDataConsulta(value);
+    } finally {
+      _$_ConsultaStoreBaseActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
+  void setImagem(String? value) {
+    final _$actionInfo = _$_ConsultaStoreBaseActionController.startAction(
+        name: '_ConsultaStoreBase.setImagem');
+    try {
+      return super.setImagem(value);
+    } finally {
+      _$_ConsultaStoreBaseActionController.endAction(_$actionInfo);
+    }
+  }
+
   @override
   String toString() {
     return '''
@@ -146,7 +201,8 @@ descricao: ${descricao},
 dataConsulta: ${dataConsulta},
 tipo: ${tipo},
 imagem: ${imagem},
-createdAt: ${createdAt}
+createdAt: ${createdAt},
+isFormValid: ${isFormValid}
     ''';
   }
 }

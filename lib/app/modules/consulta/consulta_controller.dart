@@ -24,32 +24,25 @@ abstract class _ConsultaControllerBase with Store {
   String? animalSelecionadoId;
 
   @observable
-  String? animalSelecionadoNome; // IGUAL AO ID
+  String? animalSelecionadoNome;
 
   @observable
   bool isLoading = false;
 
   _ConsultaControllerBase(this._service);
 
+  // ✅ Usar a validação do ConsultaStore
   @computed
-  bool get isFormValid {
-    final c = consulta;
-    return c.titulo.isNotEmpty &&
-        c.descricao.isNotEmpty &&
-        c.dataConsulta.isNotEmpty &&
-        c.animalId.isNotEmpty;
-  }
+  bool get isFormValid => consulta.isFormValid;
 
-  // Definir animal selecionado
   @action
   void setAnimalSelecionado(String animalId, String animalNome) {
     animalSelecionadoId = animalId;
-    animalSelecionadoNome = animalNome; // IGUAL AO ID
+    animalSelecionadoNome = animalNome;
     consulta = ConsultaStoreFactory.novo(animalId);
     loadConsultasByAnimal(animalId);
   }
 
-  // Carregar consultas do animal selecionado
   @action
   Future<void> loadConsultasByAnimal(String animalId) async {
     try {
@@ -65,64 +58,96 @@ abstract class _ConsultaControllerBase with Store {
     }
   }
 
-  // Salvar consulta
+  // ✅ Método principal para salvar consulta (com ou sem imagem)
   @action
   Future<void> salvarConsulta() async {
-    if (animalSelecionadoId == null) return;
-
-    // Gerar ID se não existir
-    if (consulta.id.isEmpty) {
-      consulta.id = const Uuid().v4();
+    if (animalSelecionadoId == null || !isFormValid) {
+      print('❌ Não é possível salvar: animalId=${animalSelecionadoId}, isValid=${isFormValid}');
+      return;
     }
 
-    consulta.animalId = animalSelecionadoId!;
-    await _service.saveOrUpdate(consulta.toModel());
+    try {
+      // Gerar ID se não existir
+      if (consulta.id.isEmpty) {
+        consulta.id = const Uuid().v4();
+      }
 
-    // Agendar notificação se estiver habilitada
-    await _scheduleNotificacaoIfEnabled(consulta);
+      consulta.animalId = animalSelecionadoId!;
 
-    await loadConsultasByAnimal(animalSelecionadoId!);
-    resetForm();
+      print('💾 Salvando consulta:');
+      print('  - ID: ${consulta.id}');
+      print('  - Título: ${consulta.titulo}');
+      print('  - Descrição: ${consulta.descricao}');
+      print('  - Data: ${consulta.dataConsulta}');
+      print('  - Imagem: ${consulta.imagem ?? "SEM IMAGEM"}');
+
+      // ✅ Salvar sempre usando o método básico (funciona com ou sem imagem)
+      await _service.saveOrUpdate(consulta.toModel());
+
+      // Agendar notificação se estiver habilitada
+      await _scheduleNotificacaoIfEnabled(consulta);
+
+      await loadConsultasByAnimal(animalSelecionadoId!);
+      resetForm();
+
+      print('✅ Consulta salva com sucesso!');
+    } catch (e) {
+      print('❌ Erro ao salvar consulta: $e');
+      rethrow;
+    }
   }
 
-  // Criar nova consulta
+  // ✅ Método simplificado para criar consulta (mantém compatibilidade)
   @action
   Future<void> criarConsulta(String titulo, String descricao, String data, String? imagem) async {
     if (animalSelecionadoId == null) return;
 
-    final novaConsulta = ConsultaStoreFactory.novo(animalSelecionadoId!);
-    // Gerar ID antes de salvar
-    novaConsulta.id = const Uuid().v4();
-    novaConsulta.titulo = titulo;
-    novaConsulta.descricao = descricao;
-    novaConsulta.dataConsulta = data;
-    novaConsulta.imagem = imagem;
+    // Atualizar a consulta atual
+    consulta.setTitulo(titulo);
+    consulta.setDescricao(descricao);
+    consulta.setDataConsulta(data);
+    consulta.setImagem(imagem);
 
-    if (imagem != null && imagem.isNotEmpty) {
-      await _service.saveOrUpdateWithImage(novaConsulta.toModel(), imagem);
-    } else {
-      await _service.saveOrUpdate(novaConsulta.toModel());
-    }
-
-    // Agendar notificação se estiver habilitada
-    await _scheduleNotificacaoIfEnabled(novaConsulta);
-
-    await loadConsultasByAnimal(animalSelecionadoId!);
+    // Salvar usando o método principal
+    await salvarConsulta();
   }
 
-  // Excluir consulta específica
+  // ✅ Método para criar consulta com imagem (mantém compatibilidade)
+  @action
+  Future<void> criarConsultaComImagem(String titulo, String descricao, String data, String imagePath) async {
+    if (animalSelecionadoId == null) return;
+
+    try {
+      final novaConsulta = ConsultaStoreFactory.novo(animalSelecionadoId!);
+      novaConsulta.id = const Uuid().v4();
+      novaConsulta.setTitulo(titulo);
+      novaConsulta.setDescricao(descricao);
+      novaConsulta.setDataConsulta(data);
+
+      print('🏥 Criando consulta com imagem...');
+      print('🐾 Animal: $animalSelecionadoNome');
+
+      await _service.saveOrUpdateWithImage(novaConsulta.toModel(), imagePath);
+
+      // Agendar notificação se estiver habilitada
+      await _scheduleNotificacaoIfEnabled(novaConsulta);
+
+      await loadConsultasByAnimal(animalSelecionadoId!);
+    } catch (e) {
+      print('❌ Erro ao criar consulta com imagem: $e');
+      rethrow;
+    }
+  }
+
   @action
   Future<void> excluirConsulta(ConsultaStore consultaParaExcluir) async {
-    // Cancelar notificação agendada
     await _notificacoesService.cancelConsultaNotification(consultaParaExcluir.id);
-
     await _service.delete(consultaParaExcluir.toModel());
     if (animalSelecionadoId != null) {
       await loadConsultasByAnimal(animalSelecionadoId!);
     }
   }
 
-  // Resetar formulário
   @action
   void resetForm() {
     if (animalSelecionadoId != null) {
@@ -130,12 +155,13 @@ abstract class _ConsultaControllerBase with Store {
     }
   }
 
-  // Método privado para agendar notificação se habilitada
   Future<void> _scheduleNotificacaoIfEnabled(ConsultaStore consulta) async {
     final isEnabled = await _settingsService.isConsultaEnabled();
-    if (!isEnabled) return;
+    if (!isEnabled) {
+      print('🔕 Notificações de consulta desabilitadas');
+      return;
+    }
 
-    // Usar o nome do animal selecionado - IGUAL AO ID
     final animalNome = animalSelecionadoNome ?? 'Pet';
 
     print('🏥 Agendando notificação de consulta...');
@@ -146,7 +172,7 @@ abstract class _ConsultaControllerBase with Store {
       titulo: consulta.titulo,
       descricao: consulta.descricao,
       dataConsulta: consulta.dataConsulta,
-      animalNome: animalNome, // USAR A VARIÁVEL DIRETAMENTE
+      animalNome: animalNome,
       animalId: consulta.animalId,
     );
   }
