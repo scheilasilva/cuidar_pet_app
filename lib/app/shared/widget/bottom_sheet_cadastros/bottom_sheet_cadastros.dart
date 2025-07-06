@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -9,8 +8,7 @@ class BottomSheetCadastro extends StatefulWidget {
   final String labelCampo1;
   final String labelCampo2;
   final String labelCampo3;
-  final Function(String, String, String, String?)
-      onSalvar; // Removido o parâmetro tipo
+  final Function(String, String, String, String?) onSalvar;
 
   const BottomSheetCadastro({
     super.key,
@@ -31,7 +29,15 @@ class _BottomSheetCadastroState extends State<BottomSheetCadastro> {
   final TextEditingController _campo3Controller = TextEditingController();
   String? _imagemPath;
   bool _isLoadingImage = false;
+  bool _isLoading = false; // ✅ Adicionado para loading do salvamento
   DateTime? _dataSelecionada;
+
+  // ✅ Validação em tempo real
+  bool get _isFormValid {
+    return _campo1Controller.text.trim().isNotEmpty &&
+        _campo2Controller.text.trim().isNotEmpty &&
+        _campo3Controller.text.trim().isNotEmpty;
+  }
 
   @override
   void dispose() {
@@ -66,7 +72,6 @@ class _BottomSheetCadastroState extends State<BottomSheetCadastro> {
         );
       },
     );
-
     if (picked != null && picked != _dataSelecionada) {
       setState(() {
         _dataSelecionada = picked;
@@ -119,7 +124,6 @@ class _BottomSheetCadastroState extends State<BottomSheetCadastro> {
     setState(() {
       _isLoadingImage = true;
     });
-
     try {
       final ImagePicker picker = ImagePicker();
       final XFile? image = await picker.pickImage(
@@ -128,7 +132,6 @@ class _BottomSheetCadastroState extends State<BottomSheetCadastro> {
         maxHeight: 1080,
         imageQuality: 85,
       );
-
       if (image != null) {
         setState(() {
           _imagemPath = image.path;
@@ -158,7 +161,6 @@ class _BottomSheetCadastroState extends State<BottomSheetCadastro> {
 
   Widget _buildImagePreview() {
     if (_imagemPath == null) return const SizedBox.shrink();
-
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       child: Column(
@@ -196,13 +198,48 @@ class _BottomSheetCadastroState extends State<BottomSheetCadastro> {
     );
   }
 
+  // ✅ Método para salvar com tratamento de erro
+  Future<void> _salvar() async {
+    if (!_isFormValid) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await widget.onSalvar(
+        _campo1Controller.text.trim(),
+        _campo2Controller.text.trim(),
+        _campo3Controller.text.trim(),
+        _imagemPath,
+      );
+
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao salvar: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-
     final maxHeight = (screenHeight * 0.8) - keyboardHeight;
-
     return Container(
       constraints: BoxConstraints(
         maxHeight: maxHeight,
@@ -242,7 +279,6 @@ class _BottomSheetCadastroState extends State<BottomSheetCadastro> {
                     ),
                   ),
                   const SizedBox(height: 16),
-
                   // Campo 1
                   Text(
                     widget.labelCampo1,
@@ -250,6 +286,7 @@ class _BottomSheetCadastroState extends State<BottomSheetCadastro> {
                   ),
                   TextField(
                     controller: _campo1Controller,
+                    onChanged: (_) => setState(() {}), // ✅ Atualizar validação
                     decoration: InputDecoration(
                       hintStyle: TextStyle(color: Colors.grey[400]),
                       filled: true,
@@ -263,7 +300,6 @@ class _BottomSheetCadastroState extends State<BottomSheetCadastro> {
                     ),
                   ),
                   const SizedBox(height: 8),
-
                   // Campo 2
                   Text(
                     widget.labelCampo2,
@@ -271,8 +307,8 @@ class _BottomSheetCadastroState extends State<BottomSheetCadastro> {
                   ),
                   TextField(
                     controller: _campo2Controller,
+                    onChanged: (_) => setState(() {}), // ✅ Atualizar validação
                     maxLines: 3,
-                    // Aumentado para 3 linhas já que removemos o dropdown
                     decoration: InputDecoration(
                       hintStyle: TextStyle(color: Colors.grey[400]),
                       filled: true,
@@ -286,7 +322,6 @@ class _BottomSheetCadastroState extends State<BottomSheetCadastro> {
                     ),
                   ),
                   const SizedBox(height: 8),
-
                   // Campo 3 - Data
                   Text(
                     widget.labelCampo3,
@@ -318,24 +353,22 @@ class _BottomSheetCadastroState extends State<BottomSheetCadastro> {
                     ),
                   ),
                   const SizedBox(height: 8),
-
                   _buildImagePreview(),
-
                   Center(
                     child: OutlinedButton.icon(
                       onPressed: _isLoadingImage ? null : _mostrarOpcoesImagem,
                       icon: _isLoadingImage
                           ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                           : Icon(
-                              _imagemPath != null
-                                  ? Icons.edit
-                                  : Icons.add_photo_alternate_outlined,
-                              color: const Color(0xFF007A63),
-                            ),
+                        _imagemPath != null
+                            ? Icons.edit
+                            : Icons.add_photo_alternate_outlined,
+                        color: const Color(0xFF007A63),
+                      ),
                       label: Text(
                         _imagemPath != null
                             ? 'Alterar imagem'
@@ -353,48 +386,38 @@ class _BottomSheetCadastroState extends State<BottomSheetCadastro> {
                     ),
                   ),
                   const SizedBox(height: 8),
-
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
-                        if (_campo1Controller.text.isEmpty ||
-                            _campo2Controller.text.isEmpty ||
-                            _campo3Controller.text.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Preencha todos os campos'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                          return;
-                        }
-
-                        // Removido o parâmetro tipo da chamada
-                        widget.onSalvar(
-                          _campo1Controller.text,
-                          _campo2Controller.text,
-                          _campo3Controller.text,
-                          _imagemPath,
-                        );
-                        Navigator.pop(context);
-                      },
+                      // ✅ Botão desabilitado se formulário inválido ou carregando
+                      onPressed: _isFormValid && !_isLoading ? _salvar : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF007A63),
+                        // ✅ Cor muda baseada no estado
+                        backgroundColor: _isFormValid && !_isLoading
+                            ? const Color(0xFF007A63)
+                            : Colors.grey[400],
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: _isLoading
+                          ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                          : const Text(
                         'Salvar',
                         style: TextStyle(
                             fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
-
                   SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
                 ],
               ),

@@ -115,6 +115,24 @@ mixin _$CalendarioController on _CalendarioControllerBase, Store {
     });
   }
 
+  late final _$_calendarRebuildTriggerAtom = Atom(
+      name: '_CalendarioControllerBase._calendarRebuildTrigger',
+      context: context);
+
+  @override
+  int get _calendarRebuildTrigger {
+    _$_calendarRebuildTriggerAtom.reportRead();
+    return super._calendarRebuildTrigger;
+  }
+
+  @override
+  set _calendarRebuildTrigger(int value) {
+    _$_calendarRebuildTriggerAtom
+        .reportWrite(value, super._calendarRebuildTrigger, () {
+      super._calendarRebuildTrigger = value;
+    });
+  }
+
   late final _$loadLembretesByAnimalAsyncAction = AsyncAction(
       '_CalendarioControllerBase.loadLembretesByAnimal',
       context: context);

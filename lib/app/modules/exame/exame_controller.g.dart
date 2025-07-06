@@ -115,16 +115,6 @@ mixin _$ExameController on _ExameControllerBase, Store {
     return _$salvarExameAsyncAction.run(() => super.salvarExame());
   }
 
-  late final _$criarExameComImagemAsyncAction =
-      AsyncAction('_ExameControllerBase.criarExameComImagem', context: context);
-
-  @override
-  Future<void> criarExameComImagem(
-      String titulo, String descricao, String data, String imagePath) {
-    return _$criarExameComImagemAsyncAction.run(
-        () => super.criarExameComImagem(titulo, descricao, data, imagePath));
-  }
-
   late final _$criarExameAsyncAction =
       AsyncAction('_ExameControllerBase.criarExame', context: context);
 
@@ -133,6 +123,16 @@ mixin _$ExameController on _ExameControllerBase, Store {
       String titulo, String descricao, String data, String? imagem) {
     return _$criarExameAsyncAction
         .run(() => super.criarExame(titulo, descricao, data, imagem));
+  }
+
+  late final _$criarExameComImagemAsyncAction =
+      AsyncAction('_ExameControllerBase.criarExameComImagem', context: context);
+
+  @override
+  Future<void> criarExameComImagem(
+      String titulo, String descricao, String data, String imagePath) {
+    return _$criarExameComImagemAsyncAction.run(
+        () => super.criarExameComImagem(titulo, descricao, data, imagePath));
   }
 
   late final _$excluirExameAsyncAction =

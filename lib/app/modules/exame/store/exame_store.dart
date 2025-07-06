@@ -65,6 +65,37 @@ abstract class _ExameStoreBase with Store {
     required this.createdAt,
   });
 
+  // ✅ Validação corrigida - apenas campos obrigatórios
+  @computed
+  bool get isFormValid {
+    return titulo.trim().isNotEmpty &&
+        descricao.trim().isNotEmpty &&
+        dataRealizacao.trim().isNotEmpty &&
+        animalId.trim().isNotEmpty;
+    // ✅ Imagem NÃO é obrigatória
+  }
+
+  // ✅ Método para atualizar campos individualmente
+  @action
+  void setTitulo(String value) {
+    titulo = value;
+  }
+
+  @action
+  void setDescricao(String value) {
+    descricao = value;
+  }
+
+  @action
+  void setDataRealizacao(String value) {
+    dataRealizacao = value;
+  }
+
+  @action
+  void setImagem(String? value) {
+    imagem = value;
+  }
+
   ExameModel toModel() {
     return ExameModel(
       id: id,
@@ -73,7 +104,7 @@ abstract class _ExameStoreBase with Store {
       descricao: descricao,
       dataRealizacao: dataRealizacao,
       tipo: tipo,
-      imagem: imagem,
+      imagem: imagem, // ✅ Pode ser null
       createdAt: createdAt,
     );
   }

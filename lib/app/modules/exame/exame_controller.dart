@@ -24,32 +24,25 @@ abstract class _ExameControllerBase with Store {
   String? animalSelecionadoId;
 
   @observable
-  String? animalSelecionadoNome; // ✅ IGUAL AO ID - só uma variável simples
+  String? animalSelecionadoNome;
 
   @observable
   bool isLoading = false;
 
   _ExameControllerBase(this._service);
 
+  // ✅ Usar a validação do ExameStore
   @computed
-  bool get isFormValid {
-    final e = exame;
-    return e.titulo.isNotEmpty &&
-        e.descricao.isNotEmpty &&
-        e.dataRealizacao.isNotEmpty &&
-        e.animalId.isNotEmpty;
-  }
+  bool get isFormValid => exame.isFormValid;
 
-  // ✅ Definir animal selecionado - IGUAL AO ID, mas agora recebe nome também
   @action
   void setAnimalSelecionado(String animalId, String animalNome) {
     animalSelecionadoId = animalId;
-    animalSelecionadoNome = animalNome; // ✅ IGUAL AO ID
+    animalSelecionadoNome = animalNome;
     exame = ExameStoreFactory.novo(animalId);
     loadExamesByAnimal(animalId);
   }
 
-  // Carregar exames do animal selecionado
   @action
   Future<void> loadExamesByAnimal(String animalId) async {
     try {
@@ -65,90 +58,96 @@ abstract class _ExameControllerBase with Store {
     }
   }
 
-  // Salvar exame
+  // ✅ Método principal para salvar exame (com ou sem imagem)
   @action
   Future<void> salvarExame() async {
-    if (animalSelecionadoId == null) return;
-
-    // Gerar ID se não existir
-    if (exame.id.isEmpty) {
-      exame.id = const Uuid().v4();
+    if (animalSelecionadoId == null || !isFormValid) {
+      print('❌ Não é possível salvar: animalId=${animalSelecionadoId}, isValid=${isFormValid}');
+      return;
     }
 
-    exame.animalId = animalSelecionadoId!;
-    await _service.saveOrUpdate(exame.toModel());
+    try {
+      // Gerar ID se não existir
+      if (exame.id.isEmpty) {
+        exame.id = const Uuid().v4();
+      }
 
-    // Agendar notificação se estiver habilitada
-    await _scheduleNotificacaoIfEnabled(exame);
+      exame.animalId = animalSelecionadoId!;
 
-    await loadExamesByAnimal(animalSelecionadoId!);
-    resetForm();
+      print('💾 Salvando exame:');
+      print('  - ID: ${exame.id}');
+      print('  - Título: ${exame.titulo}');
+      print('  - Descrição: ${exame.descricao}');
+      print('  - Data: ${exame.dataRealizacao}');
+      print('  - Imagem: ${exame.imagem ?? "SEM IMAGEM"}');
+
+      // ✅ Salvar sempre usando o método básico (funciona com ou sem imagem)
+      await _service.saveOrUpdate(exame.toModel());
+
+      // Agendar notificação se estiver habilitada
+      await _scheduleNotificacaoIfEnabled(exame);
+
+      await loadExamesByAnimal(animalSelecionadoId!);
+      resetForm();
+
+      print('✅ Exame salvo com sucesso!');
+    } catch (e) {
+      print('❌ Erro ao salvar exame: $e');
+      rethrow;
+    }
   }
 
-  // Criar novo exame com imagem
-  @action
-  Future<void> criarExameComImagem(String titulo, String descricao, String data, String imagePath) async {
-    if (animalSelecionadoId == null) return;
-
-    final novoExame = ExameStoreFactory.novo(animalSelecionadoId!);
-    // Gerar ID antes de salvar
-    novoExame.id = const Uuid().v4();
-    novoExame.titulo = titulo;
-    novoExame.descricao = descricao;
-    novoExame.dataRealizacao = data;
-
-    print('🔬 Criando exame com ID: ${novoExame.id}');
-    print('🐾 Animal: $animalSelecionadoNome');
-
-    await _service.saveOrUpdateWithImage(novoExame.toModel(), imagePath);
-
-    // Agendar notificação se estiver habilitada
-    await _scheduleNotificacaoIfEnabled(novoExame);
-
-    await loadExamesByAnimal(animalSelecionadoId!);
-  }
-
-  // Criar novo exame sem imagem (mantém compatibilidade)
+  // ✅ Método simplificado para criar exame (mantém compatibilidade)
   @action
   Future<void> criarExame(String titulo, String descricao, String data, String? imagem) async {
     if (animalSelecionadoId == null) return;
 
-    final novoExame = ExameStoreFactory.novo(animalSelecionadoId!);
-    // Gerar ID antes de salvar
-    novoExame.id = const Uuid().v4();
-    novoExame.titulo = titulo;
-    novoExame.descricao = descricao;
-    novoExame.dataRealizacao = data;
-    novoExame.imagem = imagem;
+    // Atualizar o exame atual
+    exame.setTitulo(titulo);
+    exame.setDescricao(descricao);
+    exame.setDataRealizacao(data);
+    exame.setImagem(imagem);
 
-    print('🔬 Criando exame com ID: ${novoExame.id}');
-    print('🐾 Animal: $animalSelecionadoNome');
-
-    if (imagem != null && imagem.isNotEmpty) {
-      await _service.saveOrUpdateWithImage(novoExame.toModel(), imagem);
-    } else {
-      await _service.saveOrUpdate(novoExame.toModel());
-    }
-
-    // Agendar notificação se estiver habilitada
-    await _scheduleNotificacaoIfEnabled(novoExame);
-
-    await loadExamesByAnimal(animalSelecionadoId!);
+    // Salvar usando o método principal
+    await salvarExame();
   }
 
-  // Excluir exame específico
+  // ✅ Método para criar exame com imagem (mantém compatibilidade)
+  @action
+  Future<void> criarExameComImagem(String titulo, String descricao, String data, String imagePath) async {
+    if (animalSelecionadoId == null) return;
+
+    try {
+      final novoExame = ExameStoreFactory.novo(animalSelecionadoId!);
+      novoExame.id = const Uuid().v4();
+      novoExame.setTitulo(titulo);
+      novoExame.setDescricao(descricao);
+      novoExame.setDataRealizacao(data);
+
+      print('🔬 Criando exame com imagem...');
+      print('🐾 Animal: $animalSelecionadoNome');
+
+      await _service.saveOrUpdateWithImage(novoExame.toModel(), imagePath);
+
+      // Agendar notificação se estiver habilitada
+      await _scheduleNotificacaoIfEnabled(novoExame);
+
+      await loadExamesByAnimal(animalSelecionadoId!);
+    } catch (e) {
+      print('❌ Erro ao criar exame com imagem: $e');
+      rethrow;
+    }
+  }
+
   @action
   Future<void> excluirExame(ExameStore exameParaExcluir) async {
-    // Cancelar notificação agendada
     await _notificacoesService.cancelExameNotification(exameParaExcluir.id);
-
     await _service.delete(exameParaExcluir.toModel());
     if (animalSelecionadoId != null) {
       await loadExamesByAnimal(animalSelecionadoId!);
     }
   }
 
-  // Resetar formulário
   @action
   void resetForm() {
     if (animalSelecionadoId != null) {
@@ -156,7 +155,6 @@ abstract class _ExameControllerBase with Store {
     }
   }
 
-  // ✅ Método privado para agendar notificação se habilitada
   Future<void> _scheduleNotificacaoIfEnabled(ExameStore exame) async {
     final isEnabled = await _settingsService.isExameEnabled();
     if (!isEnabled) {
@@ -164,7 +162,6 @@ abstract class _ExameControllerBase with Store {
       return;
     }
 
-    // ✅ Usar o nome do animal selecionado - IGUAL AO ID
     final animalNome = animalSelecionadoNome ?? 'Pet';
 
     print('🔬 Agendando notificação de exame...');
@@ -175,7 +172,7 @@ abstract class _ExameControllerBase with Store {
       titulo: exame.titulo,
       descricao: exame.descricao,
       dataRealizacao: exame.dataRealizacao,
-      animalNome: animalNome, // ✅ USAR A VARIÁVEL DIRETAMENTE
+      animalNome: animalNome,
       animalId: exame.animalId,
     );
   }

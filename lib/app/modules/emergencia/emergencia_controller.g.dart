@@ -9,6 +9,14 @@ part of 'emergencia_controller.dart';
 // ignore_for_file: non_constant_identifier_names, unnecessary_brace_in_string_interps, unnecessary_lambdas, prefer_expression_function_bodies, lines_longer_than_80_chars, avoid_as, avoid_annotating_with_dynamic, no_leading_underscores_for_local_identifiers
 
 mixin _$EmergenciaController on _EmergenciaControllerBase, Store {
+  Computed<bool>? _$isLoadingAnyComputed;
+
+  @override
+  bool get isLoadingAny =>
+      (_$isLoadingAnyComputed ??= Computed<bool>(() => super.isLoadingAny,
+              name: '_EmergenciaControllerBase.isLoadingAny'))
+          .value;
+
   late final _$veterinariosAtom =
       Atom(name: '_EmergenciaControllerBase.veterinarios', context: context);
 
@@ -73,6 +81,22 @@ mixin _$EmergenciaController on _EmergenciaControllerBase, Store {
     });
   }
 
+  late final _$isSearchingAtom =
+      Atom(name: '_EmergenciaControllerBase.isSearching', context: context);
+
+  @override
+  bool get isSearching {
+    _$isSearchingAtom.reportRead();
+    return super.isSearching;
+  }
+
+  @override
+  set isSearching(bool value) {
+    _$isSearchingAtom.reportWrite(value, super.isSearching, () {
+      super.isSearching = value;
+    });
+  }
+
   late final _$errorMessageAtom =
       Atom(name: '_EmergenciaControllerBase.errorMessage', context: context);
 
@@ -104,6 +128,22 @@ mixin _$EmergenciaController on _EmergenciaControllerBase, Store {
     _$veterinarioSelecionadoAtom
         .reportWrite(value, super.veterinarioSelecionado, () {
       super.veterinarioSelecionado = value;
+    });
+  }
+
+  late final _$searchQueryAtom =
+      Atom(name: '_EmergenciaControllerBase.searchQuery', context: context);
+
+  @override
+  String get searchQuery {
+    _$searchQueryAtom.reportRead();
+    return super.searchQuery;
+  }
+
+  @override
+  set searchQuery(String value) {
+    _$searchQueryAtom.reportWrite(value, super.searchQuery, () {
+      super.searchQuery = value;
     });
   }
 
@@ -157,6 +197,17 @@ mixin _$EmergenciaController on _EmergenciaControllerBase, Store {
       ActionController(name: '_EmergenciaControllerBase', context: context);
 
   @override
+  void limparPesquisa() {
+    final _$actionInfo = _$_EmergenciaControllerBaseActionController
+        .startAction(name: '_EmergenciaControllerBase.limparPesquisa');
+    try {
+      return super.limparPesquisa();
+    } finally {
+      _$_EmergenciaControllerBaseActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
   void selecionarVeterinario(VeterinarioModel veterinario) {
     final _$actionInfo = _$_EmergenciaControllerBaseActionController
         .startAction(name: '_EmergenciaControllerBase.selecionarVeterinario');
@@ -185,8 +236,11 @@ veterinarios: ${veterinarios},
 localizacaoAtual: ${localizacaoAtual},
 isLoading: ${isLoading},
 isLoadingLocation: ${isLoadingLocation},
+isSearching: ${isSearching},
 errorMessage: ${errorMessage},
-veterinarioSelecionado: ${veterinarioSelecionado}
+veterinarioSelecionado: ${veterinarioSelecionado},
+searchQuery: ${searchQuery},
+isLoadingAny: ${isLoadingAny}
     ''';
   }
 }

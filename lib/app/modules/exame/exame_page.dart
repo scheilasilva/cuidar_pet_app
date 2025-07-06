@@ -26,13 +26,11 @@ class _ExamePageState extends State<ExamePage> {
   }
 
   void _initializeWithSelectedAnimal() {
-    // Usar o animal selecionado do carrossel
     if (animalController.animalSelecionadoCarrossel != null) {
       controller.setAnimalSelecionado(
           animalController.animalSelecionadoCarrossel!.id,
           animalController.animalSelecionadoCarrossel!.nome);
     } else if (animalController.animais.isNotEmpty) {
-      // Fallback: definir o primeiro animal como selecionado
       animalController.setAnimalSelecionadoCarrossel(0);
       controller.setAnimalSelecionado(animalController.animais.first.id,
           animalController.animais.first.nome);
@@ -80,19 +78,18 @@ class _ExamePageState extends State<ExamePage> {
       builder: (context) {
         return Padding(
           padding: EdgeInsets.only(
-            bottom: MediaQuery
-                .of(context)
-                .viewInsets
-                .bottom,
+            bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
           child: BottomSheetCadastro(
-              titulo: 'Novo exame',
-              labelCampo1: 'Título do exame',
-              labelCampo2: 'Descrição do exame',
-              labelCampo3: 'Data realizada do exame',
+            titulo: 'Novo exame',
+            labelCampo1: 'Título do exame',
+            labelCampo2: 'Descrição do exame',
+            labelCampo3: 'Data realizada do exame',
+            onSalvar: (titulo, descricao, data, imagem) async {
+              try {
+                // ✅ Usar o método criarExame que aceita imagem null
+                await controller.criarExame(titulo, descricao, data, imagem);
 
-              onSalvar: (titulo, descricao, data, imagem) async {
-                await controller.criarExame(titulo, descricao, data, imagem!);
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -101,7 +98,17 @@ class _ExamePageState extends State<ExamePage> {
                     ),
                   );
                 }
-              },
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Erro ao cadastrar exame: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
           ),
         );
       },
@@ -197,7 +204,7 @@ class _ExamePageState extends State<ExamePage> {
               ),
             ),
 
-            // Lista de exames - Cards diretamente no fundo verde
+            // Lista de exames
             Expanded(
               child: Observer(
                 builder: (_) {
