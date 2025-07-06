@@ -24,10 +24,16 @@ abstract class _EmergenciaControllerBase with Store {
   bool isLoadingLocation = false;
 
   @observable
+  bool isSearching = false;
+
+  @observable
   String? errorMessage;
 
   @observable
   VeterinarioModel? veterinarioSelecionado;
+
+  @observable
+  String searchQuery = '';
 
   _EmergenciaControllerBase(this._service);
 
@@ -84,6 +90,7 @@ abstract class _EmergenciaControllerBase with Store {
       final resultado = await _service.buscarVeterinariosProximos(
         localizacaoAtual!.latitude,
         localizacaoAtual!.longitude,
+        raio: 30.0, // Alterado para 30km
       );
 
       veterinarios.clear();
@@ -99,10 +106,17 @@ abstract class _EmergenciaControllerBase with Store {
 
   @action
   Future<void> buscarVeterinariosPorTexto(String query) async {
-    if (localizacaoAtual == null || query.trim().isEmpty) return;
+    if (localizacaoAtual == null) return;
+
+    searchQuery = query;
+
+    if (query.trim().isEmpty) {
+      await buscarVeterinariosProximos();
+      return;
+    }
 
     try {
-      isLoading = true;
+      isSearching = true;
       errorMessage = null;
 
       final resultado = await _service.buscarVeterinariosPorTexto(
@@ -118,7 +132,15 @@ abstract class _EmergenciaControllerBase with Store {
       errorMessage = 'Erro ao buscar veterinários: $e';
       print('Erro ao buscar veterinários: $e');
     } finally {
-      isLoading = false;
+      isSearching = false;
+    }
+  }
+
+  @action
+  void limparPesquisa() {
+    searchQuery = '';
+    if (localizacaoAtual != null) {
+      buscarVeterinariosProximos();
     }
   }
 
@@ -136,7 +158,15 @@ abstract class _EmergenciaControllerBase with Store {
   Future<void> recarregarDados() async {
     await obterLocalizacao();
     if (localizacaoAtual != null) {
-      await buscarVeterinariosProximos();
+      if (searchQuery.isNotEmpty) {
+        await buscarVeterinariosPorTexto(searchQuery);
+      } else {
+        await buscarVeterinariosProximos();
+      }
     }
   }
+
+  // Getter para verificar se está carregando
+  @computed
+  bool get isLoadingAny => isLoading || isLoadingLocation || isSearching;
 }
