@@ -18,4 +18,3 @@
 **Scheila Silva Albino**  
 Aplicativo criado como parte do Trabalho de Conclusão de Curso (TCC) em Análise e Desenvolvimento de Sistemas – ULBRA
 
----
