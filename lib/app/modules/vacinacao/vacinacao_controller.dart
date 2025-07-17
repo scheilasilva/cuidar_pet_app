@@ -24,32 +24,25 @@ abstract class _VacinacaoControllerBase with Store {
   String? animalSelecionadoId;
 
   @observable
-  String? animalSelecionadoNome; // IGUAL AO ID - só uma variável simples
+  String? animalSelecionadoNome;
 
   @observable
   bool isLoading = false;
 
   _VacinacaoControllerBase(this._service);
 
+  // ✅ Usar a validação do VacinacaoStore
   @computed
-  bool get isFormValid {
-    final v = vacinacao;
-    return v.titulo.isNotEmpty &&
-        v.descricao.isNotEmpty &&
-        v.dataVacinacao.isNotEmpty &&
-        v.animalId.isNotEmpty;
-  }
+  bool get isFormValid => vacinacao.isFormValid;
 
-  // Definir animal selecionado - IGUAL AO ID, mas agora recebe nome também
   @action
   void setAnimalSelecionado(String animalId, String animalNome) {
     animalSelecionadoId = animalId;
-    animalSelecionadoNome = animalNome; // IGUAL AO ID
+    animalSelecionadoNome = animalNome;
     vacinacao = VacinacaoStoreFactory.novo(animalId);
     loadVacinacoesByAnimal(animalId);
   }
 
-  // Carregar vacinações do animal selecionado
   @action
   Future<void> loadVacinacoesByAnimal(String animalId) async {
     try {
@@ -65,75 +58,115 @@ abstract class _VacinacaoControllerBase with Store {
     }
   }
 
-  // Salvar vacinação
+  // ✅ Método principal para salvar vacinação (com ou sem imagem)
   @action
   Future<void> salvarVacinacao() async {
-    if (animalSelecionadoId == null) return;
-
-    // Gerar ID se não existir
-    if (vacinacao.id.isEmpty) {
-      vacinacao.id = const Uuid().v4();
+    if (animalSelecionadoId == null || !isFormValid) {
+      print('❌ Não é possível salvar: animalId=${animalSelecionadoId}, isValid=${isFormValid}');
+      return;
     }
 
-    vacinacao.animalId = animalSelecionadoId!;
-    await _service.saveOrUpdate(vacinacao.toModel());
+    try {
+      // Gerar ID se não existir
+      if (vacinacao.id.isEmpty) {
+        vacinacao.id = const Uuid().v4();
+      }
 
-    // Agendar notificação se estiver habilitada
-    await _scheduleNotificacaoIfEnabled(vacinacao);
+      vacinacao.animalId = animalSelecionadoId!;
 
-    await loadVacinacoesByAnimal(animalSelecionadoId!);
-    resetForm();
+      print('💾 Salvando vacinação:');
+      print('  - ID: ${vacinacao.id}');
+      print('  - Título: ${vacinacao.titulo}');
+      print('  - Descrição: ${vacinacao.descricao}');
+      print('  - Data: ${vacinacao.dataVacinacao}');
+      print('  - Imagem: ${vacinacao.imagem ?? "SEM IMAGEM"}');
+      print('  - Concluída: ${vacinacao.concluida}');
+
+      // ✅ Salvar sempre usando o método básico (funciona com ou sem imagem)
+      await _service.saveOrUpdate(vacinacao.toModel());
+
+      // Agendar notificação se estiver habilitada
+      await _scheduleNotificacaoIfEnabled(vacinacao);
+
+      await loadVacinacoesByAnimal(animalSelecionadoId!);
+      resetForm();
+
+      print('✅ Vacinação salva com sucesso!');
+    } catch (e) {
+      print('❌ Erro ao salvar vacinação: $e');
+      rethrow;
+    }
   }
 
-  // Criar nova vacinação
+  // ✅ Método simplificado para criar vacinação (mantém compatibilidade)
   @action
   Future<void> criarVacinacao(String titulo, String descricao, String data, String? imagem) async {
     if (animalSelecionadoId == null) return;
 
-    final novaVacinacao = VacinacaoStoreFactory.novo(animalSelecionadoId!);
-    // Gerar ID antes de salvar
-    novaVacinacao.id = const Uuid().v4();
-    novaVacinacao.titulo = titulo;
-    novaVacinacao.descricao = descricao;
-    novaVacinacao.dataVacinacao = data;
-    novaVacinacao.imagem = imagem;
+    // Atualizar a vacinação atual
+    vacinacao.setTitulo(titulo);
+    vacinacao.setDescricao(descricao);
+    vacinacao.setDataVacinacao(data);
+    vacinacao.setImagem(imagem);
 
-    if (imagem != null && imagem.isNotEmpty) {
-      await _service.saveOrUpdateWithImage(novaVacinacao.toModel(), imagem);
-    } else {
-      await _service.saveOrUpdate(novaVacinacao.toModel());
-    }
-
-    // Agendar notificação se estiver habilitada
-    await _scheduleNotificacaoIfEnabled(novaVacinacao);
-
-    await loadVacinacoesByAnimal(animalSelecionadoId!);
+    // Salvar usando o método principal
+    await salvarVacinacao();
   }
 
-  // Marcar vacinação como concluída
+  // ✅ Método para criar vacinação com imagem (mantém compatibilidade)
+  @action
+  Future<void> criarVacinacaoComImagem(String titulo, String descricao, String data, String imagePath) async {
+    if (animalSelecionadoId == null) return;
+
+    try {
+      final novaVacinacao = VacinacaoStoreFactory.novo(animalSelecionadoId!);
+      novaVacinacao.id = const Uuid().v4();
+      novaVacinacao.setTitulo(titulo);
+      novaVacinacao.setDescricao(descricao);
+      novaVacinacao.setDataVacinacao(data);
+
+      print('💉 Criando vacinação com imagem...');
+      print('🐾 Animal: $animalSelecionadoNome');
+
+      await _service.saveOrUpdateWithImage(novaVacinacao.toModel(), imagePath);
+
+      // Agendar notificação se estiver habilitada
+      await _scheduleNotificacaoIfEnabled(novaVacinacao);
+
+      await loadVacinacoesByAnimal(animalSelecionadoId!);
+    } catch (e) {
+      print('❌ Erro ao criar vacinação com imagem: $e');
+      rethrow;
+    }
+  }
+
+  // ✅ Marcar vacinação como concluída (funcionalidade específica)
   @action
   Future<void> marcarComoConcluida(VacinacaoStore vacinacaoStore, bool concluida) async {
-    vacinacaoStore.concluida = concluida;
-    await _service.saveOrUpdate(vacinacaoStore.toModel());
+    try {
+      vacinacaoStore.setConcluida(concluida);
+      await _service.saveOrUpdate(vacinacaoStore.toModel());
 
-    if (animalSelecionadoId != null) {
-      await loadVacinacoesByAnimal(animalSelecionadoId!);
+      if (animalSelecionadoId != null) {
+        await loadVacinacoesByAnimal(animalSelecionadoId!);
+      }
+
+      print('✅ Vacinação ${concluida ? "marcada como concluída" : "desmarcada"}');
+    } catch (e) {
+      print('❌ Erro ao marcar vacinação: $e');
+      rethrow;
     }
   }
 
-  // Excluir vacinação específica
   @action
   Future<void> excluirVacinacao(VacinacaoStore vacinacaoParaExcluir) async {
-    // Cancelar notificação agendada
     await _notificacoesService.cancelVacinacaoNotification(vacinacaoParaExcluir.id);
-
     await _service.delete(vacinacaoParaExcluir.toModel());
     if (animalSelecionadoId != null) {
       await loadVacinacoesByAnimal(animalSelecionadoId!);
     }
   }
 
-  // Resetar formulário
   @action
   void resetForm() {
     if (animalSelecionadoId != null) {
@@ -141,7 +174,6 @@ abstract class _VacinacaoControllerBase with Store {
     }
   }
 
-  // Método privado para agendar notificação se habilitada
   Future<void> _scheduleNotificacaoIfEnabled(VacinacaoStore vacinacao) async {
     final isEnabled = await _settingsService.isVacinacaoEnabled();
     if (!isEnabled) {
@@ -149,7 +181,6 @@ abstract class _VacinacaoControllerBase with Store {
       return;
     }
 
-    // Usar o nome do animal selecionado - IGUAL AO ID
     final animalNome = animalSelecionadoNome ?? 'Pet';
 
     print('💉 Agendando notificação de vacinação...');
@@ -160,7 +191,7 @@ abstract class _VacinacaoControllerBase with Store {
       titulo: vacinacao.titulo,
       descricao: vacinacao.descricao,
       dataVacinacao: vacinacao.dataVacinacao,
-      animalNome: animalNome, // USAR A VARIÁVEL DIRETAMENTE
+      animalNome: animalNome,
       animalId: vacinacao.animalId,
     );
   }

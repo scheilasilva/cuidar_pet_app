@@ -14,20 +14,62 @@ class VeterinarioCard extends StatelessWidget {
 
   Future<void> _ligarVeterinario() async {
     if (veterinario.telefone != null && veterinario.telefone!.isNotEmpty) {
-      final uri = Uri.parse('tel:${veterinario.telefone}');
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri);
+      try {
+        // Limpar o telefone removendo caracteres especiais
+        final telefoneNumeros = veterinario.telefone!.replaceAll(RegExp(r'[^\d+]'), '');
+        final uri = Uri.parse('tel:$telefoneNumeros');
+
+        print('📞 Tentando ligar para: $telefoneNumeros');
+
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri);
+        } else {
+          print('❌ Não foi possível abrir o discador');
+          _mostrarErro('Não foi possível abrir o discador do telefone');
+        }
+      } catch (e) {
+        print('❌ Erro ao tentar ligar: $e');
+        _mostrarErro('Erro ao tentar fazer a ligação');
       }
+    } else {
+      _mostrarErro('Telefone não disponível');
     }
   }
 
   Future<void> _abrirNavegacao() async {
-    final uri = Uri.parse(
-        'https://www.google.com/maps/dir/?api=1&destination=${veterinario.latitude},${veterinario.longitude}'
-    );
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    try {
+      // Usar Google Maps com coordenadas para maior precisão
+      final uri = Uri.parse(
+          'https://www.google.com/maps/dir/?api=1&destination=${veterinario.latitude},${veterinario.longitude}&travelmode=driving'
+      );
+
+      print('🗺️ Abrindo navegação para: ${veterinario.nome}');
+      print('📍 Coordenadas: ${veterinario.latitude}, ${veterinario.longitude}');
+
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        // Fallback: tentar abrir o app do Google Maps diretamente
+        final googleMapsUri = Uri.parse(
+            'google.navigation:q=${veterinario.latitude},${veterinario.longitude}&mode=d'
+        );
+
+        if (await canLaunchUrl(googleMapsUri)) {
+          await launchUrl(googleMapsUri);
+        } else {
+          print('❌ Não foi possível abrir o Google Maps');
+          _mostrarErro('Não foi possível abrir o Google Maps');
+        }
+      }
+    } catch (e) {
+      print('❌ Erro ao abrir navegação: $e');
+      _mostrarErro('Erro ao abrir navegação');
     }
+  }
+
+  void _mostrarErro(String mensagem) {
+    // Você pode implementar um snackbar ou toast aqui
+    print('⚠️ $mensagem');
   }
 
   @override
@@ -168,15 +210,51 @@ class VeterinarioCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
 
+              // Telefone (se disponível)
+              if (veterinario.telefone != null && veterinario.telefone!.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.phone,
+                      size: 14,
+                      color: Colors.grey[600],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      veterinario.telefone!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
               // Horário de funcionamento
               if (veterinario.horarioFuncionamento != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  veterinario.horarioFuncionamento!,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.access_time,
+                      size: 14,
+                      color: Colors.grey[600],
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        veterinario.horarioFuncionamento!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
               ],
 

@@ -126,6 +126,17 @@ mixin _$VacinacaoController on _VacinacaoControllerBase, Store {
         .run(() => super.criarVacinacao(titulo, descricao, data, imagem));
   }
 
+  late final _$criarVacinacaoComImagemAsyncAction = AsyncAction(
+      '_VacinacaoControllerBase.criarVacinacaoComImagem',
+      context: context);
+
+  @override
+  Future<void> criarVacinacaoComImagem(
+      String titulo, String descricao, String data, String imagePath) {
+    return _$criarVacinacaoComImagemAsyncAction.run(() =>
+        super.criarVacinacaoComImagem(titulo, descricao, data, imagePath));
+  }
+
   late final _$marcarComoConcluidaAsyncAction = AsyncAction(
       '_VacinacaoControllerBase.marcarComoConcluida',
       context: context);

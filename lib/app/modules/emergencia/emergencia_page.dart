@@ -1,6 +1,6 @@
 import 'package:cuidar_pet_app/app/modules/emergencia/emergencia_controller.dart';
-import 'package:cuidar_pet_app/app/modules/emergencia/submodules/veterinario/widgets/mapa_veterinarios.dart';
-import 'package:cuidar_pet_app/app/modules/emergencia/submodules/veterinario/widgets/veterinario_card.dart';
+import 'package:cuidar_pet_app/app/modules/emergencia/submodules/veterinario/widgets/mapa_veterinarios.dart' show MapaVeterinarios;
+import 'package:cuidar_pet_app/app/modules/emergencia/submodules/veterinario/widgets/veterinario_card.dart' show VeterinarioCard;
 import 'package:cuidar_pet_app/app/shared/route/route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
@@ -16,7 +16,7 @@ class EmergenciaPage extends StatefulWidget {
 
 class _EmergenciaPageState extends State<EmergenciaPage> {
   final EmergenciaController controller = Modular.get<EmergenciaController>();
-  final TextEditingController _searchController = TextEditingController();
+  final TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
@@ -24,13 +24,19 @@ class _EmergenciaPageState extends State<EmergenciaPage> {
     controller.inicializar();
   }
 
-  void _buscarVeterinarios() {
-    final query = _searchController.text.trim();
-    if (query.isNotEmpty) {
-      controller.buscarVeterinariosPorTexto(query);
-    } else {
-      controller.buscarVeterinariosProximos();
-    }
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    // Debounce para evitar muitas chamadas
+    Future.delayed(const Duration(milliseconds: 800), () {
+      if (searchController.text == value && mounted) {
+        controller.buscarVeterinariosPorTexto(value);
+      }
+    });
   }
 
   @override
@@ -92,82 +98,41 @@ class _EmergenciaPageState extends State<EmergenciaPage> {
             // Header com informações de emergência
             Container(
               padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.emergency,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Veterinários próximos',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              'Encontre ajuda veterinária rapidamente',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.8),
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Campo de busca
                   Container(
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Colors.red,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Buscar veterinário...',
-                        hintStyle: TextStyle(color: Colors.grey[400]),
-                        prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
-                        suffixIcon: IconButton(
-                          icon: Icon(Icons.clear, color: Colors.grey[600]),
-                          onPressed: () {
-                            _searchController.clear();
-                            controller.buscarVeterinariosProximos();
-                          },
+                    child: const Icon(
+                      Icons.emergency,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Veterinários próximos',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
+                        Text(
+                          'Raio de 30km da sua localização',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.8),
+                            fontSize: 14,
+                          ),
                         ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                      ),
-                      onSubmitted: (_) => _buscarVeterinarios(),
+                      ],
                     ),
                   ),
                 ],
@@ -248,6 +213,66 @@ class _EmergenciaPageState extends State<EmergenciaPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Barra de pesquisa
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey[300]!),
+                            ),
+                            child: TextField(
+                              controller: searchController,
+                              onChanged: _onSearchChanged,
+                              decoration: InputDecoration(
+                                hintText: 'Pesquisar nas proximidades',
+                                hintStyle: TextStyle(color: Colors.grey[600]),
+                                prefixIcon: Icon(
+                                  Icons.search,
+                                  color: Colors.grey[600],
+                                ),
+                                suffixIcon: Observer(
+                                  builder: (_) {
+                                    if (controller.isSearching) {
+                                      return const Padding(
+                                        padding: EdgeInsets.all(12.0),
+                                        child: SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Color(0xFF00845A),
+                                          ),
+                                        ),
+                                      );
+                                    }
+
+                                    if (searchController.text.isNotEmpty) {
+                                      return IconButton(
+                                        icon: Icon(
+                                          Icons.clear,
+                                          color: Colors.grey[600],
+                                        ),
+                                        onPressed: () {
+                                          searchController.clear();
+                                          controller.limparPesquisa();
+                                        },
+                                      );
+                                    }
+
+                                    return const SizedBox.shrink();
+                                  },
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+
                           // Mapa
                           if (controller.localizacaoAtual != null)
                             MapaVeterinarios(
@@ -258,9 +283,24 @@ class _EmergenciaPageState extends State<EmergenciaPage> {
                               veterinarios: controller.veterinarios,
                               onVeterinarioTap: (veterinario) {
                                 controller.selecionarVeterinario(veterinario);
-                                // Scroll para o card do veterinário selecionado
                               },
                             ),
+
+                          const SizedBox(height: 20),
+
+                          // Filtros rápidos
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                _buildFilterChip('Abertos agora', false),
+                                const SizedBox(width: 8),
+                                _buildFilterChip('Bem avaliados', false),
+                                const SizedBox(width: 8),
+                                _buildFilterChip('Emergência 24h', false),
+                              ],
+                            ),
+                          ),
 
                           const SizedBox(height: 20),
 
@@ -276,7 +316,7 @@ class _EmergenciaPageState extends State<EmergenciaPage> {
                                   color: Colors.black87,
                                 ),
                               ),
-                              if (controller.isLoading)
+                              if (controller.isLoadingAny)
                                 const SizedBox(
                                   width: 20,
                                   height: 20,
@@ -290,7 +330,7 @@ class _EmergenciaPageState extends State<EmergenciaPage> {
 
                           const SizedBox(height: 16),
 
-                          if (controller.veterinarios.isEmpty && !controller.isLoading)
+                          if (controller.veterinarios.isEmpty && !controller.isLoadingAny)
                             Center(
                               child: Column(
                                 children: [
@@ -309,11 +349,12 @@ class _EmergenciaPageState extends State<EmergenciaPage> {
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    'Tente expandir a área de busca',
+                                    'Tente expandir a área de busca ou verificar sua conexão',
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: Colors.grey[500],
                                     ),
+                                    textAlign: TextAlign.center,
                                   ),
                                 ],
                               ),
@@ -338,9 +379,24 @@ class _EmergenciaPageState extends State<EmergenciaPage> {
     );
   }
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
+  Widget _buildFilterChip(String label, bool isSelected) {
+    return FilterChip(
+      label: Text(
+        label,
+        style: TextStyle(
+          color: isSelected ? Colors.white : Colors.grey[700],
+          fontSize: 12,
+        ),
+      ),
+      selected: isSelected,
+      onSelected: (bool selected) {
+        // TODO: Implementar lógica de filtro
+      },
+      backgroundColor: Colors.grey[200],
+      selectedColor: const Color(0xFF00845A),
+      checkmarkColor: Colors.white,
+      side: BorderSide.none,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+    );
   }
 }

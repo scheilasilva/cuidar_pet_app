@@ -9,6 +9,14 @@ part of 'vacinacao_store.dart';
 // ignore_for_file: non_constant_identifier_names, unnecessary_brace_in_string_interps, unnecessary_lambdas, prefer_expression_function_bodies, lines_longer_than_80_chars, avoid_as, avoid_annotating_with_dynamic, no_leading_underscores_for_local_identifiers
 
 mixin _$VacinacaoStore on _VacinacaoStoreBase, Store {
+  Computed<bool>? _$isFormValidComputed;
+
+  @override
+  bool get isFormValid =>
+      (_$isFormValidComputed ??= Computed<bool>(() => super.isFormValid,
+              name: '_VacinacaoStoreBase.isFormValid'))
+          .value;
+
   late final _$idAtom = Atom(name: '_VacinacaoStoreBase.id', context: context);
 
   @override
@@ -152,6 +160,64 @@ mixin _$VacinacaoStore on _VacinacaoStoreBase, Store {
     });
   }
 
+  late final _$_VacinacaoStoreBaseActionController =
+      ActionController(name: '_VacinacaoStoreBase', context: context);
+
+  @override
+  void setTitulo(String value) {
+    final _$actionInfo = _$_VacinacaoStoreBaseActionController.startAction(
+        name: '_VacinacaoStoreBase.setTitulo');
+    try {
+      return super.setTitulo(value);
+    } finally {
+      _$_VacinacaoStoreBaseActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
+  void setDescricao(String value) {
+    final _$actionInfo = _$_VacinacaoStoreBaseActionController.startAction(
+        name: '_VacinacaoStoreBase.setDescricao');
+    try {
+      return super.setDescricao(value);
+    } finally {
+      _$_VacinacaoStoreBaseActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
+  void setDataVacinacao(String value) {
+    final _$actionInfo = _$_VacinacaoStoreBaseActionController.startAction(
+        name: '_VacinacaoStoreBase.setDataVacinacao');
+    try {
+      return super.setDataVacinacao(value);
+    } finally {
+      _$_VacinacaoStoreBaseActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
+  void setImagem(String? value) {
+    final _$actionInfo = _$_VacinacaoStoreBaseActionController.startAction(
+        name: '_VacinacaoStoreBase.setImagem');
+    try {
+      return super.setImagem(value);
+    } finally {
+      _$_VacinacaoStoreBaseActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
+  void setConcluida(bool value) {
+    final _$actionInfo = _$_VacinacaoStoreBaseActionController.startAction(
+        name: '_VacinacaoStoreBase.setConcluida');
+    try {
+      return super.setConcluida(value);
+    } finally {
+      _$_VacinacaoStoreBaseActionController.endAction(_$actionInfo);
+    }
+  }
+
   @override
   String toString() {
     return '''
@@ -163,7 +229,8 @@ dataVacinacao: ${dataVacinacao},
 tipo: ${tipo},
 imagem: ${imagem},
 concluida: ${concluida},
-createdAt: ${createdAt}
+createdAt: ${createdAt},
+isFormValid: ${isFormValid}
     ''';
   }
 }

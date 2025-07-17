@@ -26,12 +26,11 @@ class _VacinacaoPageState extends State<VacinacaoPage> {
   }
 
   void _initializeWithSelectedAnimal() {
-    // Usar o animal selecionado do carrossel
     if (animalController.animalSelecionadoCarrossel != null) {
-      controller.setAnimalSelecionado(animalController.animalSelecionadoCarrossel!.id,
+      controller.setAnimalSelecionado(
+          animalController.animalSelecionadoCarrossel!.id,
           animalController.animalSelecionadoCarrossel!.nome);
     } else if (animalController.animais.isNotEmpty) {
-      // Fallback: definir o primeiro animal como selecionado
       animalController.setAnimalSelecionadoCarrossel(0);
       controller.setAnimalSelecionado(animalController.animais.first.id,
           animalController.animais.first.nome);
@@ -99,14 +98,27 @@ class _VacinacaoPageState extends State<VacinacaoPage> {
             labelCampo2: 'Descrição da vacinação',
             labelCampo3: 'Data programada (dd/mm/aaaa)',
             onSalvar: (titulo, descricao, data, imagem) async {
-              await controller.criarVacinacao(titulo, descricao, data, imagem!);
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Vacinação cadastrada com sucesso!'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
+              try {
+                // ✅ Usar o método criarVacinacao que aceita imagem null
+                await controller.criarVacinacao(titulo, descricao, data, imagem);
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Vacinação cadastrada com sucesso!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Erro ao cadastrar vacinação: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
             },
           ),
@@ -204,7 +216,7 @@ class _VacinacaoPageState extends State<VacinacaoPage> {
               ),
             ),
 
-            // Lista de vacinações - Cards diretamente no fundo verde
+            // Lista de vacinações
             Expanded(
               child: Observer(
                 builder: (_) {

@@ -72,6 +72,42 @@ abstract class _VacinacaoStoreBase with Store {
     required this.createdAt,
   });
 
+  // ✅ Validação corrigida - apenas campos obrigatórios
+  @computed
+  bool get isFormValid {
+    return titulo.trim().isNotEmpty &&
+        descricao.trim().isNotEmpty &&
+        dataVacinacao.trim().isNotEmpty &&
+        animalId.trim().isNotEmpty;
+    // ✅ Imagem NÃO é obrigatória
+  }
+
+  // ✅ Métodos para atualizar campos individualmente
+  @action
+  void setTitulo(String value) {
+    titulo = value;
+  }
+
+  @action
+  void setDescricao(String value) {
+    descricao = value;
+  }
+
+  @action
+  void setDataVacinacao(String value) {
+    dataVacinacao = value;
+  }
+
+  @action
+  void setImagem(String? value) {
+    imagem = value;
+  }
+
+  @action
+  void setConcluida(bool value) {
+    concluida = value;
+  }
+
   VacinacaoModel toModel() {
     return VacinacaoModel(
       id: id,
@@ -80,7 +116,7 @@ abstract class _VacinacaoStoreBase with Store {
       descricao: descricao,
       dataVacinacao: dataVacinacao,
       tipo: tipo,
-      imagem: imagem,
+      imagem: imagem, // ✅ Pode ser null
       concluida: concluida,
       createdAt: createdAt,
     );

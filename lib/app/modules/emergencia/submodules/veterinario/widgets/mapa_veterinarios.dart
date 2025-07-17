@@ -18,7 +18,7 @@ class MapaVeterinarios extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 300,
+      height: 250,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
@@ -33,8 +33,8 @@ class MapaVeterinarios extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         child: FlutterMap(
           options: MapOptions(
-            initialCenter: localizacaoUsuario ?? const LatLng(-23.5505, -46.6333), // São Paulo como fallback
-            initialZoom: 14.0,
+            center: localizacaoUsuario ?? LatLng(-23.5505, -46.6333), // São Paulo como fallback
+            zoom: 13.0,
             maxZoom: 18.0,
             minZoom: 10.0,
           ),
@@ -53,8 +53,10 @@ class MapaVeterinarios extends StatelessWidget {
                 // Marcador do usuário
                 if (localizacaoUsuario != null)
                   Marker(
+                    width: 40.0,
+                    height: 40.0,
                     point: localizacaoUsuario!,
-                    child: Container(
+                    builder: (ctx) => Container(
                       decoration: BoxDecoration(
                         color: Colors.blue,
                         shape: BoxShape.circle,
@@ -78,8 +80,10 @@ class MapaVeterinarios extends StatelessWidget {
                 // Marcadores dos veterinários
                 ...veterinarios.map((veterinario) {
                   return Marker(
+                    width: 40.0,
+                    height: 40.0,
                     point: LatLng(veterinario.latitude, veterinario.longitude),
-                    child: GestureDetector(
+                    builder: (ctx) => GestureDetector(
                       onTap: () => onVeterinarioTap?.call(veterinario),
                       child: Container(
                         decoration: BoxDecoration(
