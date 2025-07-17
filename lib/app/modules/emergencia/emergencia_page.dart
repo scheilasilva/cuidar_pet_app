@@ -288,22 +288,6 @@ class _EmergenciaPageState extends State<EmergenciaPage> {
 
                           const SizedBox(height: 20),
 
-                          // Filtros rápidos
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: [
-                                _buildFilterChip('Abertos agora', false),
-                                const SizedBox(width: 8),
-                                _buildFilterChip('Bem avaliados', false),
-                                const SizedBox(width: 8),
-                                _buildFilterChip('Emergência 24h', false),
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(height: 20),
-
                           // Lista de veterinários
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,

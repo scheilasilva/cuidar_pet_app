@@ -14,6 +14,10 @@ import 'package:cuidar_pet_app/app/modules/home/home_page.dart';
 import 'package:cuidar_pet_app/app/modules/notificacoes/notificacoes_module.dart';
 import 'package:cuidar_pet_app/app/modules/perfil/perfil_module.dart';
 import 'package:cuidar_pet_app/app/modules/peso/peso_module.dart';
+import 'package:cuidar_pet_app/app/modules/peso/services/peso_service_interface.dart';
+import 'package:cuidar_pet_app/app/modules/peso/services/peso_service.dart'; // ADICIONAR
+import 'package:cuidar_pet_app/app/modules/peso/repositories/peso_repository.dart'; // ADICIONAR
+import 'package:cuidar_pet_app/app/modules/peso/repositories/peso_repository_interface.dart'; // ADICIONAR
 import 'package:cuidar_pet_app/app/modules/tratamento/tratamento_module.dart';
 import 'package:cuidar_pet_app/app/modules/vacinacao/vacinacao_module.dart';
 import 'package:cuidar_pet_app/app/shared/route/route.dart';
@@ -25,12 +29,21 @@ class HomeModule extends Module {
     // Binds do módulo de animais
     i.addSingleton<IAnimalRepository>(() => AnimalRepository());
     i.addSingleton<IAnimalService>(() => AnimalService(i.get<IAnimalRepository>()));
-    i.addSingleton<AnimalController>(() => AnimalController(i.get<IAnimalService>()));
+
+    // ADICIONAR: Binds do módulo de peso
+    i.addSingleton<IPesoRepository>(() => PesoRepository());
+    i.addSingleton<IPesoService>(() => PesoService(i.get<IPesoRepository>()));
+
+    // Controller do animal (agora com acesso ao IPesoService)
+    i.addSingleton<AnimalController>(() => AnimalController(
+        i.get<IAnimalService>(),
+        i.get<IPesoService>()
+    ));
   }
+
   @override
   void routes(RouteManager r) {
     r.child(Modular.initialRoute, child: (context) => const HomePage());
-
     r.module('/$notificacoesRoute', module: NotificacoesModule());
     r.module('/$ajustesRoute', module: AjustesModule());
     r.module('/$perfilRoute', module: PerfilModule());
